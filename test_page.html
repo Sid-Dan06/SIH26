@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Adaptive Training - Test Page</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, Segoe UI, Arial, sans-serif;
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 0 20px;
+        color: #222;
+        background: #fafafa;
+    }
+    h1 { font-size: 22px; }
+    .subtitle { color: #777; margin-bottom: 25px; }
+
+    .question {
+        border: 1px solid #e2e2e2;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 14px;
+        background: white;
+    }
+    .question p { font-weight: 600; margin: 0 0 4px 0; }
+    .tag { color: #999; font-size: 12px; display: block; margin-bottom: 10px; }
+    label {
+        display: block;
+        margin: 6px 0;
+        padding: 8px 10px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    label:hover { background: #f2f2f2; }
+
+    #submitBtn {
+        padding: 12px 24px;
+        font-size: 15px;
+        cursor: pointer;
+        margin: 20px 0 40px 0;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+    }
+    #submitBtn:hover { background: #1d4ed8; }
+
+    /* --- Results dashboard --- */
+    #result { display: none; }
+
+    .rec-card {
+        background: linear-gradient(135deg, #eff6ff, #eef2ff);
+        border: 1px solid #c7d2fe;
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 30px;
+    }
+    .rec-card .label { font-size: 12px; text-transform: uppercase; color: #6366f1; font-weight: 700; letter-spacing: 0.05em; }
+    .rec-card h2 { margin: 4px 0 14px 0; font-size: 24px; }
+    .rec-meta { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 12px; }
+    .rec-meta div { font-size: 14px; }
+    .rec-meta b { display: block; font-size: 16px; }
+    .rec-reason { font-size: 14px; color: #444; background: white; padding: 10px 14px; border-radius: 8px; margin-top: 10px; }
+
+    .skill-block { margin-bottom: 18px; }
+    .skill-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-weight: 600; cursor: pointer; }
+    .skill-bar-bg { background: #e5e7eb; border-radius: 6px; height: 10px; overflow: hidden; }
+    .skill-bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
+
+    .topics { margin-top: 10px; display: none; }
+    .topics.open { display: block; }
+    .topic-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+    .topic-bar-bg { flex: 1; background: #eee; border-radius: 5px; height: 6px; margin: 0 10px; overflow: hidden; }
+    .topic-bar-fill { height: 100%; border-radius: 5px; }
+    .topic-name { width: 170px; color: #444; }
+    .topic-pct { width: 45px; text-align: right; color: #666; }
+</style>
+</head>
+<body>
+
+<h1>Pre-Assessment (Test Page)</h1>
+<p class="subtitle">Throwaway test UI — not the final app. Built to try the real backend end-to-end.</p>
+
+<div id="questions">Loading questions...</div>
+<button id="submitBtn" style="display:none;">Submit Assessment</button>
+
+<div id="result"></div>
+
+<script>
+const API_BASE = "http://127.0.0.1:8000";
+let questions = [];
+let questionTimes = {};     // question_id -> seconds taken
+let lastActionTime = null;  // timestamp of the last answer click (or page load)
+
+async function loadQuestions() {
+    const res = await fetch(`${API_BASE}/assessment/start`);
+    questions = await res.json();
+
+    lastActionTime = Date.now();
+
+    const container = document.getElementById("questions");
+    container.innerHTML = "";
+
+    questions.forEach(q => {
+        const div = document.createElement("div");
+        div.className = "question";
+        div.innerHTML = `
+            <p>${q.question}</p>
+            <span class="tag">${q.skill} / ${q.topic} / ${q.difficulty}</span>
+            ${q.options.map(opt => `
+                <label>
+                    <input type="radio" name="${q.question_id}" value="${opt}" data-qid="${q.question_id}">
+                    ${opt}
+                </label>
+            `).join("")}
+        `;
+        container.appendChild(div);
+    });
+
+    // Track answer timing: time between consecutive answer clicks,
+    // so response_time_score reflects actual thinking time per question
+    // rather than total time since page load.
+    document.querySelectorAll('input[type="radio"]').forEach(input => {
+        input.addEventListener("change", (e) => {
+            const qid = e.target.dataset.qid;
+            if (questionTimes[qid] === undefined) {
+                const now = Date.now();
+                questionTimes[qid] = (now - lastActionTime) / 1000;
+                lastActionTime = now;
+            }
+        });
+    });
+
+    document.getElementById("submitBtn").style.display = "block";
+}
+
+async function submitAssessment() {
+    const responses = questions.map(q => {
+        const selected = document.querySelector(`input[name="${q.question_id}"]:checked`);
+        return {
+            question_id: q.question_id,
+            selected_answer: selected ? selected.value : "",
+            time_taken_seconds: questionTimes[q.question_id] ?? 30 // fallback if somehow untimed
+        };
+    });
+
+    const unanswered = responses.filter(r => r.selected_answer === "").length;
+    if (unanswered > 0) {
+        alert(`You have ${unanswered} unanswered question(s). Please answer all questions.`);
+        return;
+    }
+
+    const payload = { user_id: "test_user_manual", responses: responses };
+
+    const res = await fetch(`${API_BASE}/assessment/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        alert("Error: " + JSON.stringify(err));
+        return;
+    }
+
+    const data = await res.json();
+    displayResult(data);
+}
+
+function masteryColor(pct) {
+    if (pct < 40) return "#ef4444";       // red
+    if (pct < 70) return "#f59e0b";       // amber
+    if (pct < 85) return "#3b82f6";       // blue
+    return "#22c55e";                     // green
+}
+
+function skillAverage(topics) {
+    const values = Object.values(topics).map(t => t.mastery);
+    return values.reduce((a, b) => a + b, 0) / values.length;
+}
+
+function displayResult(data) {
+    document.getElementById("questions").style.display = "none";
+    document.getElementById("submitBtn").style.display = "none";
+
+    const rec = data.recommendation;
+    const resultDiv = document.getElementById("result");
+    resultDiv.style.display = "block";
+
+    let html = `
+        <div class="rec-card">
+            <span class="label">Recommended Next</span>
+            <h2>${rec.skill} — ${rec.topic}</h2>
+            <div class="rec-meta">
+                <div><b>${rec.mastery}%</b>Current Mastery</div>
+                <div><b>${rec.difficulty}</b>Difficulty</div>
+                <div><b>${rec.content_type}</b>Content Type</div>
+            </div>
+            <div class="rec-reason"><b>Why:</b> ${rec.reason}</div>
+        </div>
+
+        <h3>Skill Dashboard</h3>
+    `;
+
+    for (const [skill, topics] of Object.entries(data.skill_profile)) {
+        const avg = skillAverage(topics);
+        const color = masteryColor(avg);
+
+        html += `
+            <div class="skill-block">
+                <div class="skill-header" onclick="document.getElementById('topics-${skill}').classList.toggle('open')">
+                    <span>${skill}</span>
+                    <span>${avg.toFixed(1)}%</span>
+                </div>
+                <div class="skill-bar-bg">
+                    <div class="skill-bar-fill" style="width:${avg}%; background:${color};"></div>
+                </div>
+                <div class="topics" id="topics-${skill}">
+        `;
+
+        for (const [topic, t] of Object.entries(topics)) {
+            const tColor = masteryColor(t.mastery);
+            html += `
+                <div class="topic-row">
+                    <span class="topic-name">${topic}</span>
+                    <div class="topic-bar-bg">
+                        <div class="topic-bar-fill" style="width:${t.mastery}%; background:${tColor};"></div>
+                    </div>
+                    <span class="topic-pct">${t.mastery}%</span>
+                </div>
+            `;
+        }
+
+        html += `</div></div>`;
+    }
+
+    resultDiv.innerHTML = html;
+}
+
+document.getElementById("submitBtn").addEventListener("click", submitAssessment);
+loadQuestions();
+</script>
+
+</body>
+</html>

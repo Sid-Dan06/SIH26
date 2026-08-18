@@ -1,0 +1,362 @@
+[
+  {
+    "question_id": "PY001",
+    "skill": "Python",
+    "topic": "Variables and Data Types",
+    "difficulty": "Easy",
+    "question": "Which of the following is a mutable data type in Python?",
+    "options": ["int", "str", "list", "tuple"],
+    "correct_answer": "list"
+  },
+  {
+    "question_id": "PY002",
+    "skill": "Python",
+    "topic": "Variables and Data Types",
+    "difficulty": "Easy",
+    "question": "What is the type of the value 3.14 in Python?",
+    "options": ["int", "float", "str", "bool"],
+    "correct_answer": "float"
+  },
+  {
+    "question_id": "PY003",
+    "skill": "Python",
+    "topic": "Conditions",
+    "difficulty": "Easy",
+    "question": "Which keyword is used for an alternative condition in Python after 'if'?",
+    "options": ["elseif", "elif", "else if", "when"],
+    "correct_answer": "elif"
+  },
+  {
+    "question_id": "PY004",
+    "skill": "Python",
+    "topic": "Loops",
+    "difficulty": "Medium",
+    "question": "What does the 'break' statement do inside a loop?",
+    "options": ["Skips to the next iteration", "Exits the loop immediately", "Restarts the loop", "Pauses the loop"],
+    "correct_answer": "Exits the loop immediately"
+  },
+  {
+    "question_id": "PY005",
+    "skill": "Python",
+    "topic": "Loops",
+    "difficulty": "Medium",
+    "question": "What will 'range(2, 10, 2)' generate?",
+    "options": ["2,4,6,8", "2,4,6,8,10", "2,3,4,5,6,7,8,9", "0,2,4,6,8"],
+    "correct_answer": "2,4,6,8"
+  },
+  {
+    "question_id": "PY006",
+    "skill": "Python",
+    "topic": "Functions",
+    "difficulty": "Medium",
+    "question": "What keyword is used to return a value from a function?",
+    "options": ["yield", "return", "give", "pass"],
+    "correct_answer": "return"
+  },
+  {
+    "question_id": "PY007",
+    "skill": "Python",
+    "topic": "Lists and Dictionaries",
+    "difficulty": "Medium",
+    "question": "Which method adds a key-value pair to a dictionary in Python?",
+    "options": ["dict.add()", "dict[key] = value", "dict.append()", "dict.insert()"],
+    "correct_answer": "dict[key] = value"
+  },
+  {
+    "question_id": "PY008",
+    "skill": "Python",
+    "topic": "OOP",
+    "difficulty": "Hard",
+    "question": "What is the purpose of the '__init__' method in a Python class?",
+    "options": ["To delete an object", "To initialize object attributes when created", "To define a static method", "To import a module"],
+    "correct_answer": "To initialize object attributes when created"
+  },
+  {
+    "question_id": "PY009",
+    "skill": "Python",
+    "topic": "Exception Handling",
+    "difficulty": "Medium",
+    "question": "Which block always executes whether or not an exception occurs?",
+    "options": ["try", "except", "finally", "raise"],
+    "correct_answer": "finally"
+  },
+  {
+    "question_id": "PY010",
+    "skill": "Python",
+    "topic": "File Handling",
+    "difficulty": "Hard",
+    "question": "Which mode opens a file for both reading and writing, truncating it first?",
+    "options": ["'r'", "'a'", "'w+'", "'x'"],
+    "correct_answer": "'w+'"
+  },
+  {
+    "question_id": "SQL001",
+    "skill": "SQL",
+    "topic": "SELECT",
+    "difficulty": "Easy",
+    "question": "Which SQL keyword is used to retrieve data from a database?",
+    "options": ["GET", "SELECT", "FETCH", "RETRIEVE"],
+    "correct_answer": "SELECT"
+  },
+  {
+    "question_id": "SQL002",
+    "skill": "SQL",
+    "topic": "WHERE",
+    "difficulty": "Easy",
+    "question": "Which clause is used to filter rows in SQL?",
+    "options": ["WHERE", "FILTER", "HAVING", "LIMIT"],
+    "correct_answer": "WHERE"
+  },
+  {
+    "question_id": "SQL003",
+    "skill": "SQL",
+    "topic": "GROUP BY",
+    "difficulty": "Medium",
+    "question": "What is the purpose of GROUP BY in SQL?",
+    "options": ["To sort rows", "To group rows sharing a value for aggregation", "To join two tables", "To filter duplicate rows"],
+    "correct_answer": "To group rows sharing a value for aggregation"
+  },
+  {
+    "question_id": "SQL004",
+    "skill": "SQL",
+    "topic": "ORDER BY",
+    "difficulty": "Easy",
+    "question": "Which keyword sorts the result set in descending order?",
+    "options": ["DESC", "SORT DOWN", "REVERSE", "DESCEND"],
+    "correct_answer": "DESC"
+  },
+  {
+    "question_id": "SQL005",
+    "skill": "SQL",
+    "topic": "JOINs",
+    "difficulty": "Hard",
+    "question": "Which JOIN returns all rows from the left table, and matched rows from the right table?",
+    "options": ["INNER JOIN", "RIGHT JOIN", "LEFT JOIN", "FULL JOIN"],
+    "correct_answer": "LEFT JOIN"
+  },
+  {
+    "question_id": "SQL006",
+    "skill": "SQL",
+    "topic": "JOINs",
+    "difficulty": "Hard",
+    "question": "What does an INNER JOIN return?",
+    "options": ["All rows from both tables", "Only rows with matching values in both tables", "Only unmatched rows", "All rows from the left table only"],
+    "correct_answer": "Only rows with matching values in both tables"
+  },
+  {
+    "question_id": "SQL007",
+    "skill": "SQL",
+    "topic": "Subqueries",
+    "difficulty": "Hard",
+    "question": "A subquery placed inside the WHERE clause is used to:",
+    "options": ["Create a new table", "Filter results based on another query's output", "Delete rows", "Rename a column"],
+    "correct_answer": "Filter results based on another query's output"
+  },
+  {
+    "question_id": "SQL008",
+    "skill": "SQL",
+    "topic": "Aggregation",
+    "difficulty": "Medium",
+    "question": "Which SQL function returns the number of rows matching a condition?",
+    "options": ["SUM()", "COUNT()", "TOTAL()", "ADD()"],
+    "correct_answer": "COUNT()"
+  },
+  {
+    "question_id": "SQL009",
+    "skill": "SQL",
+    "topic": "CRUD",
+    "difficulty": "Easy",
+    "question": "Which SQL statement is used to add a new row to a table?",
+    "options": ["ADD", "INSERT INTO", "CREATE ROW", "NEW"],
+    "correct_answer": "INSERT INTO"
+  },
+  {
+    "question_id": "SQL010",
+    "skill": "SQL",
+    "topic": "CRUD",
+    "difficulty": "Medium",
+    "question": "Which SQL statement is used to modify existing rows in a table?",
+    "options": ["MODIFY", "UPDATE", "CHANGE", "ALTER"],
+    "correct_answer": "UPDATE"
+  },
+  {
+    "question_id": "GIT001",
+    "skill": "Git",
+    "topic": "Repository Basics",
+    "difficulty": "Easy",
+    "question": "Which command initializes a new Git repository?",
+    "options": ["git start", "git init", "git new", "git create"],
+    "correct_answer": "git init"
+  },
+  {
+    "question_id": "GIT002",
+    "skill": "Git",
+    "topic": "Repository Basics",
+    "difficulty": "Easy",
+    "question": "Which command copies an existing remote repository to your local machine?",
+    "options": ["git copy", "git clone", "git fetch", "git pull"],
+    "correct_answer": "git clone"
+  },
+  {
+    "question_id": "GIT003",
+    "skill": "Git",
+    "topic": "Commit",
+    "difficulty": "Easy",
+    "question": "Which command records staged changes to the repository history?",
+    "options": ["git save", "git commit", "git record", "git push"],
+    "correct_answer": "git commit"
+  },
+  {
+    "question_id": "GIT004",
+    "skill": "Git",
+    "topic": "Commit",
+    "difficulty": "Medium",
+    "question": "Which command stages a file for the next commit?",
+    "options": ["git stage", "git add", "git track", "git commit -a"],
+    "correct_answer": "git add"
+  },
+  {
+    "question_id": "GIT005",
+    "skill": "Git",
+    "topic": "Branches",
+    "difficulty": "Medium",
+    "question": "Which command creates a new branch without switching to it?",
+    "options": ["git branch new-branch", "git checkout -b new-branch", "git switch new-branch", "git new-branch"],
+    "correct_answer": "git branch new-branch"
+  },
+  {
+    "question_id": "GIT006",
+    "skill": "Git",
+    "topic": "Branches",
+    "difficulty": "Medium",
+    "question": "Which command switches to an existing branch AND creates it if it doesn't exist?",
+    "options": ["git switch branch", "git checkout -b branch", "git branch -m branch", "git move branch"],
+    "correct_answer": "git checkout -b branch"
+  },
+  {
+    "question_id": "GIT007",
+    "skill": "Git",
+    "topic": "Merge",
+    "difficulty": "Hard",
+    "question": "What does 'git merge' do?",
+    "options": ["Deletes a branch", "Combines changes from one branch into another", "Creates a backup", "Renames a branch"],
+    "correct_answer": "Combines changes from one branch into another"
+  },
+  {
+    "question_id": "GIT008",
+    "skill": "Git",
+    "topic": "Pull and Push",
+    "difficulty": "Easy",
+    "question": "Which command uploads local commits to a remote repository?",
+    "options": ["git upload", "git push", "git send", "git commit --remote"],
+    "correct_answer": "git push"
+  },
+  {
+    "question_id": "GIT009",
+    "skill": "Git",
+    "topic": "Pull and Push",
+    "difficulty": "Medium",
+    "question": "Which command downloads and merges changes from a remote repository?",
+    "options": ["git pull", "git fetch --merge", "git download", "git sync"],
+    "correct_answer": "git pull"
+  },
+  {
+    "question_id": "GIT010",
+    "skill": "Git",
+    "topic": "Conflict Resolution",
+    "difficulty": "Hard",
+    "question": "A merge conflict occurs when:",
+    "options": ["Two branches have the same name", "Git cannot automatically reconcile differing changes to the same lines", "A commit message is missing", "The repository has no remote"],
+    "correct_answer": "Git cannot automatically reconcile differing changes to the same lines"
+  },
+  {
+    "question_id": "LNX001",
+    "skill": "Linux",
+    "topic": "File System",
+    "difficulty": "Easy",
+    "question": "Which directory in Linux contains user home directories?",
+    "options": ["/usr", "/home", "/bin", "/etc"],
+    "correct_answer": "/home"
+  },
+  {
+    "question_id": "LNX002",
+    "skill": "Linux",
+    "topic": "File System",
+    "difficulty": "Medium",
+    "question": "Which directory typically contains system configuration files?",
+    "options": ["/etc", "/tmp", "/var", "/dev"],
+    "correct_answer": "/etc"
+  },
+  {
+    "question_id": "LNX003",
+    "skill": "Linux",
+    "topic": "Basic Commands",
+    "difficulty": "Easy",
+    "question": "Which command lists the contents of a directory?",
+    "options": ["ls", "dir", "list", "show"],
+    "correct_answer": "ls"
+  },
+  {
+    "question_id": "LNX004",
+    "skill": "Linux",
+    "topic": "Basic Commands",
+    "difficulty": "Easy",
+    "question": "Which command displays the current working directory?",
+    "options": ["cwd", "pwd", "cd", "path"],
+    "correct_answer": "pwd"
+  },
+  {
+    "question_id": "LNX005",
+    "skill": "Linux",
+    "topic": "Basic Commands",
+    "difficulty": "Medium",
+    "question": "Which command is used to search for a text pattern inside files?",
+    "options": ["find", "grep", "search", "locate"],
+    "correct_answer": "grep"
+  },
+  {
+    "question_id": "LNX006",
+    "skill": "Linux",
+    "topic": "Permissions",
+    "difficulty": "Medium",
+    "question": "Which command changes file permissions?",
+    "options": ["chperm", "chmod", "chown", "permit"],
+    "correct_answer": "chmod"
+  },
+  {
+    "question_id": "LNX007",
+    "skill": "Linux",
+    "topic": "Permissions",
+    "difficulty": "Hard",
+    "question": "In the permission string 'rwxr-xr--', what access does the 'group' have?",
+    "options": ["read, write, execute", "read, execute", "read only", "write only"],
+    "correct_answer": "read, execute"
+  },
+  {
+    "question_id": "LNX008",
+    "skill": "Linux",
+    "topic": "Processes",
+    "difficulty": "Medium",
+    "question": "Which command displays currently running processes?",
+    "options": ["ps", "proc", "jobs", "run"],
+    "correct_answer": "ps"
+  },
+  {
+    "question_id": "LNX009",
+    "skill": "Linux",
+    "topic": "Processes",
+    "difficulty": "Hard",
+    "question": "Which command sends a termination signal to a process by its PID?",
+    "options": ["stop", "kill", "end", "terminate"],
+    "correct_answer": "kill"
+  },
+  {
+    "question_id": "LNX010",
+    "skill": "Linux",
+    "topic": "Package Management",
+    "difficulty": "Medium",
+    "question": "On Debian/Ubuntu systems, which command is used to install a package?",
+    "options": ["apt install", "yum install", "brew install", "pkg install"],
+    "correct_answer": "apt install"
+  }
+]
