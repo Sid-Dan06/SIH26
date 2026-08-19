@@ -115,6 +115,44 @@ def score_submission(
     return dict(profile)
 
 
+def build_answer_review(
+    submission: AssessmentSubmission,
+    question_bank: List[Question],
+) -> List[dict]:
+    """
+    Build a per-question review: what was asked, what the user picked,
+    what the correct answer was, and whether they got it right.
+
+    This is separate from score_submission() on purpose — that function
+    produces the AGGREGATED topic-level profile used by the adaptive engine;
+    this one produces the DETAILED per-question breakdown used for showing
+    the user a review of their own answers. Different consumers, different
+    shapes, so we keep them as two functions instead of overloading one.
+    """
+    questions_by_id = {q.question_id: q for q in question_bank}
+    review = []
+
+    for response in submission.responses:
+        question = questions_by_id.get(response.question_id)
+        if question is None:
+            continue
+
+        review.append({
+            "question_id": question.question_id,
+            "skill": question.skill.value,
+            "topic": question.topic,
+            "difficulty": question.difficulty.value,
+            "question": question.question,
+            "options": question.options,
+            "selected_answer": response.selected_answer,
+            "correct_answer": question.correct_answer,
+            "is_correct": response.selected_answer == question.correct_answer,
+            "time_taken_seconds": round(response.time_taken_seconds, 1),
+        })
+
+    return review
+
+
 def explain_topic_score(skill: str, topic: str, topic_data: dict) -> str:
     """
     Human-readable explanation of how a topic's mastery score was calculated.
@@ -134,7 +172,7 @@ if __name__ == "__main__":
     # question bank, with a deliberate mix of correct/incorrect answers so
     # we can see the topic profile come out differently per topic.
     import random
-    from assessment.Assessment import get_pre_assessment_questions
+    from assessment.assessment import get_pre_assessment_questions
     from models.schemas import QuestionResponse
 
     random.seed(42)
