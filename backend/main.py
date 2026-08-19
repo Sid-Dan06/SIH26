@@ -13,6 +13,7 @@ Then visit http://127.0.0.1:8000/docs for interactive API docs (FastAPI
 generates this automatically — useful for testing endpoints by hand).
 """
 
+from ai.gemini import generate_learning_content
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -57,15 +58,6 @@ def start_assessment():
 
 @app.post("/assessment/submit")
 def submit_assessment(submission: AssessmentSubmission):
-    """
-    Accept a user's completed assessment, score it, and return:
-        - the full topic-level skill profile
-        - the top recommendation (topic, difficulty, content type, reason)
-
-    FastAPI + Pydantic automatically validate the incoming JSON against
-    AssessmentSubmission — if the frontend sends malformed data, this
-    endpoint rejects it before our code even runs.
-    """
     questions = get_pre_assessment_questions()
 
     if not submission.responses:
@@ -74,11 +66,17 @@ def submit_assessment(submission: AssessmentSubmission):
     profile = score_submission(submission, questions)
     recommendation = recommend_next_step(profile)
 
+    learning_content = None
+    if recommendation:
+        learning_content = generate_learning_content(recommendation)
+
     return {
         "user_id": submission.user_id,
         "skill_profile": profile,
         "recommendation": recommendation,
+        "learning_content": learning_content,
     }
+
 
 
 @app.get("/")
