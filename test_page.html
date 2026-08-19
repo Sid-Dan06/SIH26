@@ -192,6 +192,109 @@
             text-align: right;
             color: #666;
         }
+
+        /* --- Simulator --- */
+        .sim-panel {
+            background: #fff;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .sim-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #334155;
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        .sim-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .sim-controls label {
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+            font-size: 13px;
+            background: none;
+        }
+        .sim-controls label:hover {
+            background: none;
+        }
+        .sim-btn {
+            background: #10b981;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .sim-btn:hover {
+            background: #059669;
+        }
+
+        /* --- Answer Review --- */
+        .review-title {
+            margin-top: 40px;
+            margin-bottom: 15px;
+            font-size: 18px;
+            color: #1e293b;
+        }
+        .review-item {
+            background: #fff;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            padding: 15px;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+        .review-item.correct {
+            border-left: 4px solid #10b981;
+        }
+        .review-item.incorrect {
+            border-left: 4px solid #ef4444;
+        }
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 12px;
+            color: #64748b;
+        }
+        .review-status {
+            font-weight: bold;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+        }
+        .review-status.correct {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .review-status.incorrect {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .review-question {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 6px;
+        }
+        .review-answers {
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .review-time {
+            font-size: 11px;
+            color: #94a3b8;
+            text-align: right;
+        }
     </style>
 </head>
 
@@ -210,6 +313,7 @@
         let questions = [];
         let questionTimes = {};     // question_id -> seconds taken
         let lastActionTime = null;  // timestamp of the last answer click (or page load)
+        let currentData = null;     // stores the active response payload for updates
 
         async function loadQuestions() {
             const res = await fetch(`${API_BASE}/assessment/start`);
@@ -319,66 +423,214 @@
             document.getElementById("questions").style.display = "none";
             document.getElementById("submitBtn").style.display = "none";
 
+            // Save the data to currentData so the simulator can read it
+            currentData = data;
+
             const rec = data.recommendation;
             const resultDiv = document.getElementById("result");
             resultDiv.style.display = "block";
 
-            let html = `
-        <div class="rec-card">
-            <span class="label">Recommended Next</span>
-            <h2>${rec.skill} — ${rec.topic}</h2>
-            <div class="rec-meta">
-                <div><b>${rec.mastery}%</b>Current Mastery</div>
-                <div><b>${rec.difficulty}</b>Difficulty</div>
-                <div><b>${rec.content_type}</b>Content Type</div>
-            </div>
-            <div class="rec-reason"><b>Why:</b> ${rec.reason}</div>
-            
-            ${data.learning_content ? `
-                <hr style="border: 0; border-top: 1px solid #c7d2fe; margin: 20px 0;">
-                <h3 style="margin-top: 20px; color: #1e3a8a;">Personalized Study Material</h3>
-                <div class="learning-material" style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e2e2; white-space: pre-wrap; font-family: inherit; line-height: 1.6; text-align: left;">
-                    ${data.learning_content}
-                </div>
-            ` : ''}
-        </div>
+            let html = "";
 
-        <h3>Skill Dashboard</h3>
-    `;
+            if (rec) {
+                html += `
+                    <div class="rec-card">
+                        <span class="label">Recommended Next</span>
+                        <h2>${rec.skill} — ${rec.topic}</h2>
+                        <div class="rec-meta">
+                            <div><b>${rec.mastery}%</b>Current Mastery</div>
+                            <div><b>${rec.difficulty}</b>Difficulty</div>
+                            <div><b>${rec.content_type}</b>Content Type</div>
+                        </div>
+                        <div class="rec-reason"><b>Why:</b> ${rec.reason}</div>
+                        
+                        ${data.learning_content ? `
+                            <hr style="border: 0; border-top: 1px solid #c7d2fe; margin: 20px 0;">
+                            <h3 style="margin-top: 20px; color: #1e3a8a;">Personalized Study Material</h3>
+                            <div class="learning-material" style="background: white; padding: 20px; border-radius: 8px; border: 1px solid #e2e2e2; white-space: pre-wrap; font-family: inherit; line-height: 1.6; text-align: left;">
+                                ${data.learning_content}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Simulator Panel -->
+                    <div class="sim-panel">
+                        <h3 class="sim-title">🔄 Adaptive Learning Loop Simulator</h3>
+                        <p style="font-size:12px; margin-top:0; color:#475569;">
+                            Simulate studying the recommended topic (<b>${rec.skill} — ${rec.topic}</b>) to see your mastery score update and the next topic adapt!
+                        </p>
+                        <div class="sim-controls">
+                            <label>
+                                Quiz Score: 
+                                <select id="simQuizCorrect" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1;">
+                                    <option value="5">5/5 (100%)</option>
+                                    <option value="4" selected>4/5 (80%)</option>
+                                    <option value="3">3/5 (60%)</option>
+                                    <option value="2">2/5 (40%)</option>
+                                    <option value="1">1/5 (20%)</option>
+                                </select>
+                            </label>
+                            
+                            <label style="margin-left: 10px;">
+                                Practical Exercise:
+                                <select id="simExerciseScore" style="padding: 4px 8px; border-radius: 4px; border: 1px solid #cbd5e1;">
+                                    <option value="100">100% (Perfect)</option>
+                                    <option value="80" selected>80% (Great)</option>
+                                    <option value="50">50% (Passing)</option>
+                                    <option value="20">20% (Struggling)</option>
+                                    <option value="none">None (No Exercise)</option>
+                                </select>
+                            </label>
+
+                            <button class="sim-btn" onclick="simulateLearning()" style="margin-left: 10px;">Simulate Lesson Completed</button>
+                        </div>
+                        <div id="simFeedback" style="margin-top: 10px; font-size: 13px; font-weight: 600; color: #0f766e; display: none;"></div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="rec-card" style="background: #ecfdf5; border-color: #a7f3d0;">
+                        <h2>🎉 All Goals Completed!</h2>
+                        <p>Your skill levels across all topics are outstanding. Ready for development work!</p>
+                    </div>
+                `;
+            }
+
+            html += `<h3>Skill Dashboard</h3>`;
 
             for (const [skill, topics] of Object.entries(data.skill_profile)) {
                 const avg = skillAverage(topics);
                 const color = masteryColor(avg);
 
                 html += `
-            <div class="skill-block">
-                <div class="skill-header" onclick="document.getElementById('topics-${skill}').classList.toggle('open')">
-                    <span>${skill}</span>
-                    <span>${avg.toFixed(1)}%</span>
-                </div>
-                <div class="skill-bar-bg">
-                    <div class="skill-bar-fill" style="width:${avg}%; background:${color};"></div>
-                </div>
-                <div class="topics" id="topics-${skill}">
-        `;
+                    <div class="skill-block">
+                        <div class="skill-header" onclick="document.getElementById('topics-${skill}').classList.toggle('open')">
+                            <span>${skill}</span>
+                            <span>${avg.toFixed(1)}%</span>
+                        </div>
+                        <div class="skill-bar-bg">
+                            <div class="skill-bar-fill" style="width:${avg}%; background:${color};"></div>
+                        </div>
+                        <div class="topics" id="topics-${skill}">
+                `;
 
                 for (const [topic, t] of Object.entries(topics)) {
                     const tColor = masteryColor(t.mastery);
                     html += `
-                <div class="topic-row">
-                    <span class="topic-name">${topic}</span>
-                    <div class="topic-bar-bg">
-                        <div class="topic-bar-fill" style="width:${t.mastery}%; background:${tColor};"></div>
-                    </div>
-                    <span class="topic-pct">${t.mastery}%</span>
-                </div>
-            `;
+                        <div class="topic-row">
+                            <span class="topic-name">${topic}</span>
+                            <div class="topic-bar-bg">
+                                <div class="topic-bar-fill" style="width:${t.mastery}%; background:${tColor};"></div>
+                            </div>
+                            <span class="topic-pct">${t.mastery}%</span>
+                        </div>
+                    `;
                 }
 
                 html += `</div></div>`;
             }
 
+            // Append Answer Review Section if present
+            if (data.answer_review) {
+                html += `
+                    <h3 class="review-title">📝 Pre-Assessment Answer Review</h3>
+                    <div class="review-list">
+                        ${data.answer_review.map((item, idx) => `
+                            <div class="review-item ${item.is_correct ? 'correct' : 'incorrect'}">
+                                <div class="review-header">
+                                    <span>Question ${idx + 1} (${item.skill} — ${item.topic})</span>
+                                    <span class="review-status ${item.is_correct ? 'correct' : 'incorrect'}">
+                                        ${item.is_correct ? 'Correct' : 'Incorrect'}
+                                    </span>
+                                </div>
+                                <div class="review-question">${item.question}</div>
+                                <div class="review-answers">
+                                    <div>Your Answer: <span style="font-weight: 600; color: ${item.is_correct ? '#16a34a' : '#dc2626'};">${item.selected_answer || '(No Answer)'}</span></div>
+                                    ${!item.is_correct ? `<div>Correct Answer: <span style="font-weight: 600; color: #16a34a;">${item.correct_answer}</span></div>` : ''}
+                                </div>
+                                <div class="review-time">⏱️ Time taken: ${item.time_taken_seconds}s</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+
             resultDiv.innerHTML = html;
+        }
+
+        async function simulateLearning() {
+            if (!currentData || !currentData.recommendation) return;
+
+            const rec = currentData.recommendation;
+            const quizCorrect = parseInt(document.getElementById("simQuizCorrect").value);
+            const exerciseVal = document.getElementById("simExerciseScore").value;
+            const exerciseScore = exerciseVal === "none" ? null : parseFloat(exerciseVal);
+
+            const feedbackDiv = document.getElementById("simFeedback");
+            feedbackDiv.style.display = "block";
+            feedbackDiv.innerHTML = "⌛ Recalculating adaptive path & generating next lesson...";
+
+            const payload = {
+                user_id: currentData.user_id || "test_user_manual",
+                skill: rec.skill,
+                topic: rec.topic,
+                quiz_correct: quizCorrect,
+                quiz_total: 5,
+                exercise_score: exerciseScore,
+                skill_profile: currentData.skill_profile
+            };
+
+            try {
+                const res = await fetch(`${API_BASE}/learning/complete`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert("Error updating mastery: " + JSON.stringify(err));
+                    feedbackDiv.style.display = "none";
+                    return;
+                }
+
+                const result = await res.json();
+
+                // Compute dynamic message
+                const update = result.mastery_update;
+                let feedbackHtml = `✅ Mastery Updated! <b>${rec.topic}</b> went from <b>${update.old_mastery}%</b> to <b>${update.new_mastery}%</b>!<br>`;
+
+                // Update dataset
+                currentData.skill_profile = result.updated_skill_profile;
+                currentData.recommendation = result.new_recommendation;
+                currentData.learning_content = null;
+
+                // Load next content if recommendation exists
+                if (result.new_recommendation) {
+                    const contentRes = await fetch(`${API_BASE}/generate-content`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(result.new_recommendation)
+                    });
+                    if (contentRes.ok) {
+                        const contentData = await contentRes.json();
+                        currentData.learning_content = contentData.content;
+                    }
+                }
+
+                displayResult(currentData);
+
+                // Show completion feedback back in the newly generated panel
+                const newFeedback = document.getElementById("simFeedback");
+                if (newFeedback) {
+                    newFeedback.style.display = "block";
+                    newFeedback.innerHTML = feedbackHtml;
+                }
+
+            } catch (error) {
+                alert("Network error: " + error.message);
+                feedbackDiv.style.display = "none";
+            }
         }
 
         document.getElementById("submitBtn").addEventListener("click", submitAssessment);
