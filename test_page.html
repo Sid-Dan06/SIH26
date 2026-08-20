@@ -178,9 +178,6 @@ async function loadQuestions() {
         container.appendChild(div);
     });
 
-    // Track answer timing: time between consecutive answer clicks,
-    // so response_time_score reflects actual thinking time per question
-    // rather than total time since page load.
     document.querySelectorAll('input[type="radio"]').forEach(input => {
         input.addEventListener("change", (e) => {
             const qid = e.target.dataset.qid;
@@ -201,7 +198,7 @@ async function submitAssessment() {
         return {
             question_id: q.question_id,
             selected_answer: selected ? selected.value : "",
-            time_taken_seconds: questionTimes[q.question_id] ?? 30 // fallback if somehow untimed
+            time_taken_seconds: questionTimes[q.question_id] ?? 30
         };
     });
 
@@ -230,10 +227,10 @@ async function submitAssessment() {
 }
 
 function masteryColor(pct) {
-    if (pct < 40) return "#ef4444";       // red
-    if (pct < 70) return "#f59e0b";       // amber
-    if (pct < 85) return "#3b82f6";       // blue
-    return "#22c55e";                     // green
+    if (pct < 40) return "#ef4444";
+    if (pct < 70) return "#f59e0b";
+    if (pct < 85) return "#3b82f6";
+    return "#22c55e";
 }
 
 function skillAverage(topics) {
@@ -296,7 +293,6 @@ function displayResult(data) {
         html += `</div></div>`;
     }
 
-    // --- Answer Review section ---
     const correctCount = data.answer_review.filter(r => r.is_correct).length;
     const totalCount = data.answer_review.length;
 
@@ -323,7 +319,6 @@ function displayResult(data) {
     resultDiv.innerHTML = html;
 }
 
-// Function to run code in backend terminal
 async function runTerminalCode() {
     const code = document.getElementById("codeInput").value;
     const outputDiv = document.getElementById("terminalOutput");

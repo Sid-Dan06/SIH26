@@ -65,3 +65,20 @@ The initial goal is to demonstrate that two learners with the same learning goal
 🚧 Status
 
 Currently in development
+
+## Local Backend Setup
+
+The backend uses SQLite for user accounts, saved mastery profiles, assessment
+attempts, and lesson history. The database is created automatically at
+`backend/training.db` on first startup.
+
+```powershell
+cd backend
+python -m pip install -r requirements.txt
+python -m uvicorn main:app --reload
+```
+
+Register or log in through `/docs`, then send the returned bearer token as an
+`Authorization: Bearer <token>` header. Use `/progress` to load saved mastery
+and `/history` to load completed learning sessions. Configure
+`GEMINI_API_KEY` in `backend/.env` only when AI lesson generation is needed.
