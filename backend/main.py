@@ -25,6 +25,7 @@ from adaptive.recommender import recommend_next_step
 from adaptive.mastery_update import calculate_new_mastery
 from ai.qwen import generate_lesson_content, ContentGenerationError
 from models.schemas import AssessmentSubmission
+from execution.runner import CodeExecutionRequest, run_python_code
 
 app = FastAPI(title="Adaptive IT Training System")
 
@@ -179,6 +180,15 @@ def complete_learning_session(payload: LearningCompleteRequest):
         "updated_skill_profile": updated_profile,
         "new_recommendation": new_recommendation,
     }
+
+
+@app.post("/execute")
+def execute_code(payload: CodeExecutionRequest):
+    """Execute Python code submitted from the frontend terminal."""
+    if payload.language.lower() == "python":
+        return run_python_code(payload.code)
+    else:
+        raise HTTPException(status_code=400, detail="Only Python execution is supported.")
 
 
 @app.get("/")
