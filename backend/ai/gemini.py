@@ -9,13 +9,11 @@ load_dotenv(env_path)
 
 api_key = os.getenv("GEMINI_API_KEY")
 
-if not api_key:
-    raise ValueError("GEMINI_API_KEY not found in .env")
-
-client = genai.Client(api_key=api_key)
-
 
 def generate_learning_content(recommendation: dict) -> str:
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY is not configured in backend/.env")
+    client = genai.Client(api_key=api_key)
     prompt = f"""
 You are an adaptive learning assistant.
 

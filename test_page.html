@@ -295,6 +295,37 @@
             color: #94a3b8;
             text-align: right;
         }
+
+        .auth-panel {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .auth-panel input {
+            padding: 9px;
+            margin: 4px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+        }
+
+        .auth-panel button {
+            padding: 9px 14px;
+            margin: 4px;
+            border: 0;
+            border-radius: 6px;
+            color: white;
+            background: #2563eb;
+            cursor: pointer;
+        }
+
+        #authStatus {
+            color: #475569;
+            font-size: 13px;
+            margin: 8px 4px 0;
+        }
     </style>
 </head>
 
@@ -302,6 +333,16 @@
 
     <h1>Pre-Assessment (Test Page)</h1>
     <p class="subtitle">Throwaway test UI — not the final app. Built to try the real backend end-to-end.</p>
+
+    <div class="auth-panel">
+        <strong>Account</strong><br>
+        <input id="username" placeholder="Username">
+        <input id="email" type="email" placeholder="Email (for registration)">
+        <input id="password" type="password" placeholder="Password (8+ characters)">
+        <button id="registerBtn" type="button">Register</button>
+        <button id="loginBtn" type="button">Login</button>
+        <div id="authStatus">Register or log in before submitting the assessment.</div>
+    </div>
 
     <div id="questions">Loading questions...</div>
     <button id="submitBtn" style="display:none;">Submit Assessment</button>
@@ -314,6 +355,51 @@
         let questionTimes = {};     // question_id -> seconds taken
         let lastActionTime = null;  // timestamp of the last answer click (or page load)
         let currentData = null;     // stores the active response payload for updates
+        let authToken = localStorage.getItem("adaptive_training_token");
+        let currentUser = JSON.parse(localStorage.getItem("adaptive_training_user") || "null");
+
+        function authHeaders() {
+            return {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${authToken}`
+            };
+        }
+
+        function updateAuthStatus(message) {
+            document.getElementById("authStatus").innerText = message;
+        }
+
+        async function authenticate(mode) {
+            const username = document.getElementById("username").value.trim();
+            const email = document.getElementById("email").value.trim();
+            const password = document.getElementById("password").value;
+            const endpoint = mode === "register" ? "/auth/register" : "/auth/login";
+            const payload = mode === "register"
+                ? { username, email, password }
+                : { login: username || email, password };
+
+            try {
+                const res = await fetch(`${API_BASE}${endpoint}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    updateAuthStatus("Error: " + (data.detail || "Authentication failed."));
+                    return;
+                }
+                authToken = data.token;
+                currentUser = data.user;
+                localStorage.setItem("adaptive_training_token", authToken);
+                localStorage.setItem("adaptive_training_user", JSON.stringify(currentUser));
+                document.getElementById("username").value = currentUser.username;
+                document.getElementById("email").value = currentUser.email;
+                updateAuthStatus(`Logged in as ${currentUser.username}. You can submit the assessment.`);
+            } catch (error) {
+                updateAuthStatus("Network error: " + error.message);
+            }
+        }
 
         async function loadQuestions() {
             const res = await fetch(`${API_BASE}/assessment/start`);
@@ -382,10 +468,20 @@
 
             const payload = { user_id: "test_user_manual", responses: responses };
 
+            if (!authToken || !currentUser) {
+                alert("Please register or log in before submitting the assessment.");
+                btn.innerText = originalText;
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                btn.style.cursor = "pointer";
+                return;
+            }
+            payload.user_id = String(currentUser.id);
+
             try {
                 const res = await fetch(`${API_BASE}/assessment/submit`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: authHeaders(),
                     body: JSON.stringify(payload)
                 });
 
@@ -577,13 +673,14 @@
                 quiz_correct: quizCorrect,
                 quiz_total: 5,
                 exercise_score: exerciseScore,
-                skill_profile: currentData.skill_profile
+                skill_profile: currentData.skill_profile,
+                time_taken_seconds: null
             };
 
             try {
                 const res = await fetch(`${API_BASE}/learning/complete`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: authHeaders(),
                     body: JSON.stringify(payload)
                 });
 
@@ -634,6 +731,13 @@
         }
 
         document.getElementById("submitBtn").addEventListener("click", submitAssessment);
+        document.getElementById("registerBtn").addEventListener("click", () => authenticate("register"));
+        document.getElementById("loginBtn").addEventListener("click", () => authenticate("login"));
+        if (authToken && currentUser) {
+            document.getElementById("username").value = currentUser.username;
+            document.getElementById("email").value = currentUser.email;
+            updateAuthStatus(`Logged in as ${currentUser.username}.`);
+        }
         loadQuestions();
     </script>
 

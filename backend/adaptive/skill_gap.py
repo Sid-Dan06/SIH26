@@ -9,26 +9,38 @@ score." Priority also considers error frequency and response time, so a
 topic with slightly higher mastery but lots of repeated mistakes and slow
 answers can outrank a topic that's simply low but was a clean, fast miss.
 
-NOTE ON SCOPE: your spec's full priority formula also includes
-"recency_factor" and "number of previous attempts" — those require learning
-history (multiple sessions over time), which doesn't exist yet since we only
-have a single pre-assessment. Those two factors are stubbed at 0 for now and
-clearly marked below. They'll plug in once database/database.py and
-learning_sessions exist (Day 2), without needing to change this file's
-structure.
+The recency factor is populated from the persisted last-practice timestamp in
+the user's SQLite mastery profile. A topic becomes more urgent as it remains
+unpracticed, up to the configured 30-day window.
 """
 
+from datetime import datetime, timezone
 from typing import Dict, List
 
 # --- Configurable weights ------------------------------------------------
 # priority_score = weakness_weight * weakness_score
 #                 + error_weight * error_frequency
 #                 + time_weight * response_time_penalty
-#                 + recency_weight * recency_factor       (stubbed at 0 for now)
+#                 + recency_weight * recency_factor
 WEAKNESS_WEIGHT = 0.50
 ERROR_WEIGHT = 0.25
 TIME_PENALTY_WEIGHT = 0.15
-RECENCY_WEIGHT = 0.10  # not active yet — no history to compute this from
+RECENCY_WEIGHT = 0.10
+RECENCY_WINDOW_DAYS = 30
+
+
+def _recency_factor(last_practiced_at: str | None) -> float:
+    """Increase urgency as the time since the last practice approaches 30 days."""
+    if not last_practiced_at:
+        return 0
+    try:
+        practiced_at = datetime.fromisoformat(last_practiced_at)
+        if practiced_at.tzinfo is None:
+            practiced_at = practiced_at.replace(tzinfo=timezone.utc)
+        days_since_practice = max(0, (datetime.now(timezone.utc) - practiced_at).days)
+        return round(min(100, (days_since_practice / RECENCY_WINDOW_DAYS) * 100), 1)
+    except ValueError:
+        return 0
 
 
 def _calculate_priority(topic_data: dict) -> dict:
@@ -44,7 +56,7 @@ def _calculate_priority(topic_data: dict) -> dict:
     weakness_score = 100 - mastery
     error_frequency = (1 - accuracy) * 100
     response_time_penalty = (1 - response_time_score) * 100
-    recency_factor = 0  # placeholder until learning history exists
+    recency_factor = _recency_factor(topic_data.get("last_practiced_at"))
 
     priority_score = (
         WEAKNESS_WEIGHT * weakness_score
