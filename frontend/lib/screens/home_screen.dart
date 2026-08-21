@@ -821,6 +821,12 @@ class _TrackCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _divider() => Container(
+        height: 28,
+        width: 1,
+        color: AppColors.border,
+      );
 }
 
 class _SessionTile extends StatelessWidget {
@@ -888,3 +894,4 @@ class _SessionTile extends StatelessWidget {
     );
   }
 }
+
