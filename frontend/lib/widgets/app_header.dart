@@ -4,11 +4,13 @@ import '../theme/app_theme.dart';
 class AppHeader extends StatelessWidget {
   final String title;
   final String subtitle;
+  final bool showLogo;
 
   const AppHeader({
     super.key,
     required this.title,
     this.subtitle = '',
+    this.showLogo = true,
   });
 
   @override
@@ -19,22 +21,24 @@ class AppHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
-                children: [
-                  Icon(Icons.auto_awesome_rounded,
-                      color: AppColors.purple, size: 17),
-                  SizedBox(width: 6),
-                  Text(
-                    'DevPulse AI',
-                    style: TextStyle(
-                      color: AppColors.purple,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
+              if (showLogo) ...[
+                const Row(
+                  children: [
+                    Icon(Icons.auto_awesome_rounded,
+                        color: AppColors.purple, size: 17),
+                    SizedBox(width: 6),
+                    Text(
+                      'DevPulse AI',
+                      style: TextStyle(
+                        color: AppColors.purple,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 5),
+                  ],
+                ),
+                const SizedBox(height: 5),
+              ],
               Text(
                 title,
                 style: const TextStyle(
