@@ -9,6 +9,8 @@ import '../widgets/primary_button.dart';
 import '../widgets/section_title.dart';
 import '../widgets/home_widgets.dart';
 import '../services/api_service.dart';
+import 'syllabus_screen.dart';
+import 'terminal_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -272,7 +274,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () {},
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => Scaffold(
+                              backgroundColor: AppColors.page,
+                              body: const SafeArea(child: SyllabusScreen()),
+                            ),
+                          ),
+                        ),
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: AppColors.border),
                           shape: RoundedRectangleBorder(
@@ -427,6 +437,22 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icons.psychology_outlined,
             title: 'Python Skills Analysis',
             subtitle: 'AI review pending',
+          ),
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => Scaffold(
+                  backgroundColor: AppColors.page,
+                  body: const SafeArea(child: TerminalScreen()),
+                ),
+              ),
+            ),
+            child: const UpNextTile(
+              icon: Icons.terminal_rounded,
+              title: 'Open Terminal',
+              subtitle: 'Practice running code',
+            ),
           ),
         ],
       ),

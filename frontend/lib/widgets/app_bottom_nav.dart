@@ -41,6 +41,12 @@ class AppBottomNav extends StatelessWidget {
           selectedIcon: Icon(Icons.route_rounded, color: AppColors.purple),
           label: 'My Path',
         ),
+        NavigationDestination(
+          icon: Icon(Icons.dashboard_outlined),
+          selectedIcon:
+              Icon(Icons.dashboard_rounded, color: AppColors.purple),
+          label: 'Dashboard',
+        ),
       ],
     );
   }

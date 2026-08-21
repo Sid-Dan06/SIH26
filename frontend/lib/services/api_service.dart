@@ -133,4 +133,107 @@ class ApiService {
     }
     throw Exception("Failed to execute code in backend sandbox");
   }
+
+  // 7. AI Content Generation (used by both the Lesson screen & Quiz
+  // Generator screen — same backend endpoint, different content_type).
+  static Future<String> generateContent({
+    required String skill,
+    required String topic,
+    required String difficulty,
+    required String contentType,
+    double mastery = 40.0,
+    String reason = "Requested directly by the learner.",
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/generate-content'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'skill': skill,
+        'topic': topic,
+        'mastery': mastery,
+        'difficulty': difficulty,
+        'content_type': contentType,
+        'reason': reason,
+      }),
+    );
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      return data['content']?.toString() ?? '';
+    }
+    throw Exception("Failed to generate AI content");
+  }
+
+  // 8. Session History (for the Dashboard screen)
+  static Future<List<dynamic>> fetchHistory() async {
+    try {
+      final res = await http.get(
+        Uri.parse('$baseUrl/history'),
+        headers: _authHeaders,
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return data['sessions'] ?? [];
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // 9. Quiz Attempt History (for the Dashboard screen)
+  static Future<List<dynamic>> fetchQuizHistory() async {
+    try {
+      final res = await http.get(
+        Uri.parse('$baseUrl/quiz-history'),
+        headers: _authHeaders,
+      );
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        return data['attempts'] ?? [];
+      }
+    } catch (_) {}
+    return [];
+  }
+}
+
+/// Static syllabus reference data, mirrored from backend/data/questions.json
+/// topic groupings. The backend has no dedicated /syllabus endpoint, so the
+/// curriculum structure lives here and is combined with live mastery scores
+/// pulled from /progress.
+class SyllabusData {
+  static const Map<String, List<String>> topicsBySkill = {
+    'Python': [
+      'Variables and Data Types',
+      'Conditions',
+      'Loops',
+      'Functions',
+      'Lists and Dictionaries',
+      'OOP',
+      'Exception Handling',
+      'File Handling',
+    ],
+    'SQL': [
+      'SELECT',
+      'WHERE',
+      'CRUD',
+      'JOINs',
+      'GROUP BY',
+      'Aggregation',
+      'ORDER BY',
+      'Subqueries',
+    ],
+    'Git': [
+      'Repository Basics',
+      'Commit',
+      'Branches',
+      'Merge',
+      'Conflict Resolution',
+      'Pull and Push',
+    ],
+    'Linux': [
+      'Basic Commands',
+      'File System',
+      'Permissions',
+      'Package Management',
+      'Processes',
+    ],
+  };
 }

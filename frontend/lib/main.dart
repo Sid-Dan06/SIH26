@@ -4,6 +4,7 @@ import 'screens/home_screen.dart';
 import 'screens/skills_screen.dart';
 import 'screens/quiz_screen.dart';
 import 'screens/path_screen.dart';
+import 'screens/dashboard_screen.dart';
 import 'widgets/app_bottom_nav.dart';
 import 'theme/app_theme.dart';
 
@@ -40,6 +41,7 @@ class _AppShellState extends State<AppShell> {
     SkillsScreen(),
     QuizScreen(),
     PathScreen(),
+    DashboardScreen(),
   ];
 
   @override
