@@ -5,6 +5,7 @@ import '../widgets/pill.dart';
 import '../widgets/progress_bar.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/quiz_widgets.dart';
+import '../services/api_service.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -16,11 +17,98 @@ class QuizScreen extends StatefulWidget {
 class _QuizScreenState extends State<QuizScreen> {
   int selected = -1;
   bool submitted = false;
+  bool loading = true;
+  bool isSubmitting = false;
+  int currentQuestionIndex = 0;
 
-  final answers = const ['1', '2', '3', 'iterable'];
+  List<dynamic> liveQuestions = [];
+  List<Map<String, dynamic>> userResponses = [];
+
+  @override
+  void initState() {
+    super.initState();
+    loadBackendQuestions();
+  }
+
+  Future<void> loadBackendQuestions() async {
+    try {
+      final qList = await ApiService.fetchQuestions();
+      if (mounted) {
+        setState(() {
+          liveQuestions = qList;
+          loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> submitCurrentAnswer() async {
+    if (selected < 0 || isSubmitting) return;
+
+    final q = liveQuestions.isNotEmpty
+        ? liveQuestions[currentQuestionIndex]
+        : {
+            'question_id': 'q1',
+            'options': ['1', '2', '3', 'iterable'],
+          };
+
+    final selectedText = (q['options'] as List)[selected];
+
+    userResponses.add({
+      'question_id': q['question_id'] ?? 'q1',
+      'selected_answer': selectedText,
+      'time_taken_seconds': 15.0,
+    });
+
+    if (currentQuestionIndex + 1 <
+        (liveQuestions.isNotEmpty ? liveQuestions.length : 10)) {
+      setState(() {
+        currentQuestionIndex++;
+        selected = -1;
+      });
+    } else {
+      // Final Question Submitted!
+      setState(() {
+        isSubmitting = true;
+        submitted = true;
+      });
+
+      try {
+        await ApiService.submitQuiz(userResponses);
+      } catch (e) {
+        debugPrint("Network notice: $e");
+      } finally {
+        if (mounted) {
+          setState(() {
+            isSubmitting = false;
+          });
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.purple),
+      );
+    }
+
+    final currentQuestion = liveQuestions.isNotEmpty
+        ? liveQuestions[currentQuestionIndex]
+        : {
+            'question':
+                'Given list = [1, 2, 3], what is the output of my_list[-1]?',
+            'skill': 'Python',
+            'topic': 'Basics',
+            'options': ['1', '2', '3', 'iterable'],
+          };
+
+    final List<String> answers = List<String>.from(currentQuestion['options']);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 24),
       child: Column(
@@ -31,30 +119,30 @@ class _QuizScreenState extends State<QuizScreen> {
             subtitle: 'Test your knowledge and update your skill profile.',
           ),
           const SizedBox(height: 18),
-
-          const Row(
+          Row(
             children: [
               Text(
-                'Question 3 of 10',
-                style: TextStyle(
+                'Question ${currentQuestionIndex + 1} of ${liveQuestions.isNotEmpty ? liveQuestions.length : 10}',
+                style: const TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w700,
                   color: AppColors.muted,
                 ),
               ),
-              Spacer(),
+              const Spacer(),
               Pill(
-                text: 'Python Basics',
+                text:
+                    '${currentQuestion['skill'] ?? 'Python'} ${currentQuestion['topic'] ?? 'Basics'}',
                 background: AppColors.lavender,
                 foreground: AppColors.purple,
               ),
             ],
           ),
           const SizedBox(height: 8),
-          const ProgressBar(value: .3),
-
+          ProgressBar(
+              value: (currentQuestionIndex + 1) /
+                  (liveQuestions.isNotEmpty ? liveQuestions.length : 10)),
           const SizedBox(height: 18),
-
           Container(
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
@@ -65,9 +153,9 @@ class _QuizScreenState extends State<QuizScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Given list = [1, 2, 3], what is the output of my_list[-1]?',
-                  style: TextStyle(
+                Text(
+                  currentQuestion['question'] ?? '',
+                  style: const TextStyle(
                     fontSize: 14,
                     height: 1.45,
                     fontWeight: FontWeight.w800,
@@ -82,9 +170,9 @@ class _QuizScreenState extends State<QuizScreen> {
                     color: AppColors.navy,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Text(
-                    'my_list = [1, 2, 3]\nprint(my_list[-1])',
-                    style: TextStyle(
+                  child: Text(
+                    currentQuestion['question'] ?? '',
+                    style: const TextStyle(
                       fontFamily: 'monospace',
                       fontSize: 10,
                       color: Colors.white,
@@ -106,7 +194,7 @@ class _QuizScreenState extends State<QuizScreen> {
                       SizedBox(width: 7),
                       Expanded(
                         child: Text(
-                          'AI Hint: Python supports negative indexing.',
+                          'AI Hint: Read the options carefully.',
                           style: TextStyle(
                             color: AppColors.purple,
                             fontSize: 9,
@@ -118,7 +206,6 @@ class _QuizScreenState extends State<QuizScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-
                 ...List.generate(
                   answers.length,
                   (i) => AnswerOption(
@@ -126,23 +213,24 @@ class _QuizScreenState extends State<QuizScreen> {
                     selected: selected == i,
                     correct: submitted && i == 2,
                     wrong: submitted && selected == i && i != 2,
-                    onTap: submitted
+                    onTap: (submitted || isSubmitting)
                         ? null
                         : () => setState(() => selected = i),
                   ),
                 ),
-
                 const SizedBox(height: 8),
                 SizedBox(
                   width: double.infinity,
                   child: PrimaryButton(
-                    text: submitted ? 'Next Question' : 'Submit Answer',
+                    text: submitted
+                        ? 'Quiz Complete 🎉'
+                        : (isSubmitting ? 'Submitting...' : 'Submit Answer'),
                     icon: submitted
-                        ? Icons.arrow_forward_rounded
+                        ? Icons.check_circle_rounded
                         : Icons.check_rounded,
-                    onPressed: selected < 0
+                    onPressed: (selected < 0 || isSubmitting)
                         ? null
-                        : () => setState(() => submitted = true),
+                        : submitCurrentAnswer,
                   ),
                 ),
               ],

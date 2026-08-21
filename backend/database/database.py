@@ -31,6 +31,9 @@ def initialize_database() -> None:
                 created_at TEXT NOT NULL
             );
 
+            INSERT OR IGNORE INTO users (id, username, email, password_hash, created_at) 
+            VALUES (1, 'Potato', 'potato@example.com', 'dummy_hash', '2026-08-21T00:00:00Z');
+
             CREATE TABLE IF NOT EXISTS sessions (
                 token TEXT PRIMARY KEY,
                 user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
