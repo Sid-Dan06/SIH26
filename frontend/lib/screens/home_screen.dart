@@ -24,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String recommendationReason =
       "Strengthen your Python list comprehension skills before moving to advanced data processing.";
   String recommendationTopic = "Python List Comprehensions";
+  String recommendationSkill = "Python";
   double progressValue = 0.45;
   bool isGeneratingLesson = false;
 
@@ -45,6 +46,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 data['recommendation']['reason'] ?? recommendationReason;
             recommendationTopic =
                 data['recommendation']['topic'] ?? recommendationTopic;
+            recommendationSkill =
+                data['recommendation']['skill'] ?? recommendationSkill;
+          }
+          if (data.containsKey('skill_profile')) {
+            final profile = data['skill_profile'] as Map<String, dynamic>;
+            if (profile.containsKey(recommendationSkill)) {
+              final topics = profile[recommendationSkill] as Map<String, dynamic>;
+              if (topics.isNotEmpty) {
+                double sum = 0;
+                topics.forEach((key, value) {
+                  sum += (value['mastery'] ?? 50.0);
+                });
+                progressValue = (sum / topics.length) / 100;
+              }
+            }
           }
         });
       }
@@ -55,32 +71,23 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => isGeneratingLesson = true);
 
     try {
-      final res = await http.post(
-        Uri.parse('${ApiService.baseUrl}/generate-content'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'topic': recommendationTopic,
-          'target_difficulty': 'Beginner',
-          'content_type': 'lesson_with_quiz',
-          'reason': recommendationReason,
-        }),
+      final content = await ApiService.generateContent(
+        skill: recommendationSkill,
+        topic: recommendationTopic,
+        difficulty: 'Beginner',
+        contentType: 'lesson_with_quiz',
+        reason: recommendationReason,
       );
 
       setState(() => isGeneratingLesson = false);
-
-      if (res.statusCode == 200) {
-        final lessonData = jsonDecode(res.body);
-        _showLessonDialog(lessonData);
-      } else {
-        _showFallbackLessonDialog();
-      }
+      _showLessonDialog(content);
     } catch (e) {
       setState(() => isGeneratingLesson = false);
       _showFallbackLessonDialog();
     }
   }
 
-  void _showLessonDialog(Map<String, dynamic> lesson) {
+  void _showLessonDialog(String content) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -114,12 +121,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     const Icon(Icons.auto_awesome,
                         color: AppColors.purple, size: 22),
                     const SizedBox(width: 8),
-                    Text(
-                      lesson['topic'] ?? 'AI Micro-Lesson',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.text,
+                    Expanded(
+                      child: Text(
+                        recommendationTopic,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.text,
+                        ),
                       ),
                     ),
                   ],
@@ -127,46 +136,55 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: AppColors.lavender,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.all(Radius.circular(12)),
                   ),
-                  child: Text(
-                    lesson['explanation'] ??
-                        'Here is your AI generated micro-lesson explanation.',
+                  child: SelectableText(
+                    content,
                     style: const TextStyle(
                         fontSize: 11.5, color: AppColors.text, height: 1.5),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Code Examples',
-                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.navy,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    (lesson['examples'] != null &&
-                            (lesson['examples'] as List).isNotEmpty)
-                        ? lesson['examples'][0]
-                        : '# Python Code Example\nnumbers = [1, 2, 3, 4]\nsquares = [x**2 for x in numbers]\nprint(squares)',
-                    style: const TextStyle(
-                      fontFamily: 'monospace',
-                      fontSize: 10,
-                      color: Colors.white,
-                      height: 1.5,
-                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
                 PrimaryButton(
                   text: 'Complete Lesson 🎉',
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () async {
+                    final messenger = ScaffoldMessenger.of(context);
+                    final navigator = Navigator.of(context);
+                    
+                    navigator.pop();
+                    
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('Updating mastery & loading next recommendation...'),
+                        backgroundColor: AppColors.purple,
+                      ),
+                    );
+                    try {
+                      await ApiService.completeLearningSession(
+                        skill: recommendationSkill,
+                        topic: recommendationTopic,
+                        quizCorrect: 5,
+                        quizTotal: 5,
+                        timeTakenSeconds: 120.0,
+                      );
+                      await loadLiveProgress();
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Text('Mastery updated successfully!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } catch (e) {
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text('Failed to update progress: $e'),
+                          backgroundColor: AppColors.red,
+                        ),
+                      );
+                    }
+                  },
                 ),
               ],
             );
@@ -177,14 +195,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showFallbackLessonDialog() {
-    _showLessonDialog({
-      'topic': recommendationTopic,
-      'explanation':
-          'List comprehensions provide a concise way to create lists in Python. Syntax: [expression for item in iterable].',
-      'examples': [
-        '# Example:\nsquares = [x**2 for x in range(10)]\nprint(squares)'
-      ],
-    });
+    _showLessonDialog(
+      'List comprehensions provide a concise way to create lists in Python. Syntax: [expression for item in iterable].\n\n'
+      '# Example:\n'
+      'squares = [x**2 for x in range(10)]\n'
+      'print(squares)'
+    );
   }
 
   @override
@@ -244,9 +260,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
                 const SizedBox(height: 5),
-                const Text(
-                  'Module 4 • Functions & Data Structures',
-                  style: TextStyle(fontSize: 10, color: AppColors.muted),
+                 Text(
+                  'Skill: $recommendationSkill Course',
+                  style: const TextStyle(fontSize: 10, color: AppColors.muted),
                 ),
                 const SizedBox(height: 14),
                 ProgressBar(value: progressValue),
@@ -257,8 +273,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text('${(progressValue * 100).toInt()}% Completed',
                         style: const TextStyle(
                             fontSize: 9, color: AppColors.muted)),
-                    const Text('12/28 Lessons',
-                        style: TextStyle(fontSize: 9, color: AppColors.muted)),
+                    Text('${SyllabusData.topicsBySkill[recommendationSkill]?.length ?? 0} Topics',
+                        style: const TextStyle(fontSize: 9, color: AppColors.muted)),
                   ],
                 ),
                 const SizedBox(height: 14),

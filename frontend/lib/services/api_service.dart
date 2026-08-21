@@ -6,8 +6,8 @@ class ApiService {
   // 🔘 SET TO false LATER (When you build your Login/Sign-Up screens)
   static bool isGuestTestingMode = true;
 
-  // Local FastAPI URL for Web Chrome
-  static const String baseUrl = "http://127.0.0.1:8000";
+  // Local FastAPI URL for Web Chrome / Emulator
+  static const String baseUrl = "http://10.0.2.2:8000";
   static String? userToken;
   static int? userId = 1;
   static String userName = "Potato";
@@ -191,6 +191,42 @@ class ApiService {
       }
     } catch (_) {}
     return [];
+  }
+
+  // 10. Complete Learning Session & update mastery
+  static Future<Map<String, dynamic>> completeLearningSession({
+    required String skill,
+    required String topic,
+    required int quizCorrect,
+    required int quizTotal,
+    double? exerciseScore,
+    double? timeTakenSeconds,
+  }) async {
+    final res = await http.post(
+      Uri.parse('$baseUrl/learning/complete'),
+      headers: _authHeaders,
+      body: jsonEncode({
+        'user_id': userId?.toString() ?? "guest_user_1",
+        'skill': skill,
+        'topic': topic,
+        'quiz_correct': quizCorrect,
+        'quiz_total': quizTotal,
+        'exercise_score': exerciseScore,
+        'time_taken_seconds': timeTakenSeconds,
+      }),
+    );
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body);
+      if (data.containsKey('updated_skill_profile')) {
+        latestDbProfile = {
+          'user_id': userId,
+          'skill_profile': data['updated_skill_profile'],
+          'recommendation': data['new_recommendation'],
+        };
+      }
+      return data;
+    }
+    throw Exception("Failed to complete learning session on backend");
   }
 }
 
