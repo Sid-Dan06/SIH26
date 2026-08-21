@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/skills_screen.dart';
 import 'screens/quiz_screen.dart';
@@ -21,7 +22,7 @@ class AdaptiveIntelligenceApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Adaptive Intelligence',
       theme: AppTheme.lightTheme,
-      home: const AppShell(),
+      home: const AuthScreen(),
     );
   }
 }
