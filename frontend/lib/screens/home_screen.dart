@@ -9,7 +9,6 @@ import '../services/api_service.dart';
 import 'syllabus_screen.dart';
 import 'terminal_screen.dart';
 import 'lesson_screen.dart';
-import 'quiz_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -26,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   String recommendationSkill = "Python";
   double progressValue = 0.45;
   bool isGeneratingLesson = false;
+  List<dynamic> history = [];
 
   @override
   void initState() {
@@ -35,10 +35,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> loadLiveProgress() async {
     try {
-      final data = await ApiService.fetchProgress();
+      final results = await Future.wait([
+        ApiService.fetchProgress(),
+        ApiService.fetchHistory(),
+      ]);
+
+      final data = results[0] as Map<String, dynamic>;
+      final historyData = results[1] as List<dynamic>;
+
       if (data.isNotEmpty) {
         setState(() {
           userName = ApiService.userName;
+          history = historyData;
+
           if (data.containsKey('recommendation') &&
               data['recommendation'] != null) {
             recommendationReason =
@@ -48,15 +57,21 @@ class _HomeScreenState extends State<HomeScreen> {
             recommendationSkill =
                 data['recommendation']['skill'] ?? recommendationSkill;
           }
+
           if (data.containsKey('skill_profile')) {
             final profile = data['skill_profile'] as Map<String, dynamic>;
+
             if (profile.containsKey(recommendationSkill)) {
-              final topics = profile[recommendationSkill] as Map<String, dynamic>;
+              final topics =
+                  profile[recommendationSkill] as Map<String, dynamic>;
+
               if (topics.isNotEmpty) {
                 double sum = 0;
+
                 topics.forEach((key, value) {
                   sum += (value['mastery'] ?? 50.0);
                 });
+
                 progressValue = (sum / topics.length) / 100;
               }
             }
@@ -117,8 +132,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    const Icon(Icons.auto_awesome,
-                        color: AppColors.purple, size: 22),
+                    const Icon(
+                      Icons.auto_awesome,
+                      color: AppColors.purple,
+                      size: 22,
+                    ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -142,7 +160,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: SelectableText(
                     content,
                     style: const TextStyle(
-                        fontSize: 11.5, color: AppColors.text, height: 1.5),
+                      fontSize: 11.5,
+                      color: AppColors.text,
+                      height: 1.5,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -151,15 +172,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: () async {
                     final messenger = ScaffoldMessenger.of(context);
                     final navigator = Navigator.of(context);
-                    
+
                     navigator.pop();
-                    
+
                     messenger.showSnackBar(
                       const SnackBar(
-                        content: Text('Updating mastery & loading next recommendation...'),
+                        content: Text(
+                          'Updating mastery & loading next recommendation...',
+                        ),
                         backgroundColor: AppColors.purple,
                       ),
                     );
+
                     try {
                       await ApiService.completeLearningSession(
                         skill: recommendationSkill,
@@ -168,7 +192,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         quizTotal: 5,
                         timeTakenSeconds: 120.0,
                       );
+
                       await loadLiveProgress();
+
                       messenger.showSnackBar(
                         const SnackBar(
                           content: Text('Mastery updated successfully!'),
@@ -198,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
       'List comprehensions provide a concise way to create lists in Python. Syntax: [expression for item in iterable].\n\n'
       '# Example:\n'
       'squares = [x**2 for x in range(10)]\n'
-      'print(squares)'
+      'print(squares)',
     );
   }
 
@@ -217,7 +243,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
           // Learning Quick Stats Bar
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 12,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -285,7 +314,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.greenBg,
                         borderRadius: BorderRadius.circular(8),
@@ -313,7 +345,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 5),
                 Text(
                   'Skill Track: $recommendationSkill Mastery Course',
-                  style: const TextStyle(fontSize: 10.5, color: AppColors.muted),
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    color: AppColors.muted,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 ProgressBar(value: progressValue),
@@ -323,11 +358,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       '${(progressValue * 100).toInt()}% Completed',
-                      style: const TextStyle(fontSize: 9.5, color: AppColors.muted),
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        color: AppColors.muted,
+                      ),
                     ),
                     Text(
                       '${SyllabusData.topicsBySkill[recommendationSkill]?.length ?? 0} Total Topics',
-                      style: const TextStyle(fontSize: 9.5, color: AppColors.muted),
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        color: AppColors.muted,
+                      ),
                     ),
                   ],
                 ),
@@ -349,12 +390,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           MaterialPageRoute(
                             builder: (_) => const Scaffold(
                               backgroundColor: AppColors.page,
-                              body: SafeArea(child: SyllabusScreen()),
+                              body: SafeArea(
+                                child: SyllabusScreen(),
+                              ),
                             ),
                           ),
                         ),
                         style: OutlinedButton.styleFrom(
-                          side: const BorderSide(color: AppColors.border),
+                          side: const BorderSide(
+                            color: AppColors.border,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -362,7 +407,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: const Text(
                           'View Syllabus',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.text),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.text,
+                          ),
                         ),
                       ),
                     ),
@@ -376,142 +425,59 @@ class _HomeScreenState extends State<HomeScreen> {
           // Learning & Practice Hub (2x2 Grid)
           const SectionTitle(title: 'Learning & Practice Hub'),
           const SizedBox(height: 12),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.35,
-            children: [
-              _HubTile(
-                icon: Icons.terminal_rounded,
-                iconBg: AppColors.lavender,
-                iconColor: AppColors.purple,
-                title: 'Terminal',
-                subtitle: 'Live Python sandbox',
-                badge: 'Practice',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const Scaffold(
-                      backgroundColor: AppColors.page,
-                      body: SafeArea(child: TerminalScreen()),
+          SizedBox(
+            height: 115,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _HubTile(
+                    icon: Icons.terminal_rounded,
+                    iconBg: AppColors.lavender,
+                    iconColor: AppColors.purple,
+                    title: 'Terminal',
+                    subtitle: 'Live Python sandbox',
+                    badge: 'Practice',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const Scaffold(
+                          backgroundColor: AppColors.page,
+                          body: SafeArea(
+                            child: TerminalScreen(),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              _HubTile(
-                icon: Icons.auto_awesome,
-                iconBg: const Color(0xFFFFE6E9),
-                iconColor: const Color(0xFFE95B67),
-                title: 'Lesson Studio',
-                subtitle: 'AI micro-lessons',
-                badge: 'AI Powered',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const Scaffold(
-                      backgroundColor: AppColors.page,
-                      body: SafeArea(child: LessonScreen()),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _HubTile(
+                    icon: Icons.auto_awesome,
+                    iconBg: const Color(0xFFFFE6E9),
+                    iconColor: const Color(0xFFE95B67),
+                    title: 'Lesson Studio',
+                    subtitle: 'AI micro-lessons',
+                    badge: 'AI Powered',
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const Scaffold(
+                          backgroundColor: AppColors.page,
+                          body: SafeArea(
+                            child: LessonScreen(),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              _HubTile(
-                icon: Icons.quiz_rounded,
-                iconBg: AppColors.yellowBg,
-                iconColor: const Color(0xFF8A6A00),
-                title: 'Quick Quiz',
-                subtitle: 'Test your skills',
-                badge: 'Assessment',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const Scaffold(
-                      backgroundColor: AppColors.page,
-                      body: SafeArea(child: QuizScreen()),
-                    ),
-                  ),
-                ),
-              ),
-              _HubTile(
-                icon: Icons.menu_book_rounded,
-                iconBg: AppColors.greenBg,
-                iconColor: AppColors.green,
-                title: 'Syllabus',
-                subtitle: 'Browse all tracks',
-                badge: 'Curriculum',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const Scaffold(
-                      backgroundColor: AppColors.page,
-                      body: SafeArea(child: SyllabusScreen()),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
-
-          // Popular Learning Tracks
-          const SectionTitle(title: 'Curriculum Tracks'),
-          const SizedBox(height: 12),
-          _TrackCard(
-            title: 'Python Programming Track',
-            subtitle: '8 topics • Variables, Functions, Loops & OOP',
-            icon: Icons.code_rounded,
-            color: AppColors.purple,
-            bg: AppColors.lavender,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const Scaffold(
-                  backgroundColor: AppColors.page,
-                  body: SafeArea(child: SyllabusScreen()),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _TrackCard(
-            title: 'SQL & Database Architecture',
-            subtitle: '8 topics • CRUD, JOINs, Group By & Subqueries',
-            icon: Icons.storage_rounded,
-            color: AppColors.green,
-            bg: AppColors.greenBg,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const Scaffold(
-                  backgroundColor: AppColors.page,
-                  body: SafeArea(child: SyllabusScreen()),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          _TrackCard(
-            title: 'Linux & Command Line Tools',
-            subtitle: '5 topics • File system, permissions & scripts',
-            icon: Icons.terminal_outlined,
-            color: const Color(0xFFE95B67),
-            bg: const Color(0xFFFFE6E9),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const Scaffold(
-                  backgroundColor: AppColors.page,
-                  body: SafeArea(child: SyllabusScreen()),
-                ),
-              ),
+              ],
             ),
           ),
           const SizedBox(height: 22),
 
-          // Code Pro-Tip Snippet Card
           const SectionTitle(title: 'Pro Tip of the Day'),
           const SizedBox(height: 10),
           Container(
@@ -525,7 +491,11 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.lightbulb_outline_rounded, color: AppColors.yellow, size: 18),
+                    Icon(
+                      Icons.lightbulb_outline_rounded,
+                      color: AppColors.yellow,
+                      size: 18,
+                    ),
                     SizedBox(width: 8),
                     Text(
                       'Python List Comprehensions',
@@ -537,6 +507,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
+
+                // Code Pro-Tip Snippet Card
                 const SizedBox(height: 10),
                 Container(
                   width: double.infinity,
@@ -562,7 +534,9 @@ class _HomeScreenState extends State<HomeScreen> {
                     MaterialPageRoute(
                       builder: (_) => const Scaffold(
                         backgroundColor: AppColors.page,
-                        body: SafeArea(child: TerminalScreen()),
+                        body: SafeArea(
+                          child: TerminalScreen(),
+                        ),
                       ),
                     ),
                   ),
@@ -583,6 +557,35 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+
+          const SizedBox(height: 28),
+
+          // Recent Sessions
+          const SectionTitle(title: 'Recent Sessions'),
+          const SizedBox(height: 12),
+
+          if (history.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: const Text(
+                'No learning sessions recorded yet. Start a lesson or take a quiz!',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  color: AppColors.muted,
+                ),
+              ),
+            )
+          else
+            ...history.take(5).map(
+                  (s) => _SessionTile(session: s),
+                ),
+
+          const SizedBox(height: 22),
         ],
       ),
     );
@@ -627,7 +630,10 @@ class _StatItem extends StatelessWidget {
             ),
             Text(
               subtitle,
-              style: const TextStyle(fontSize: 8.5, color: AppColors.muted),
+              style: const TextStyle(
+                fontSize: 8.5,
+                color: AppColors.muted,
+              ),
             ),
           ],
         ),
@@ -685,11 +691,18 @@ class _HubTile extends StatelessWidget {
                     color: iconBg,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(icon, color: iconColor, size: 18),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 18,
+                  ),
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: iconBg,
                     borderRadius: BorderRadius.circular(6),
@@ -717,7 +730,10 @@ class _HubTile extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               subtitle,
-              style: const TextStyle(fontSize: 9, color: AppColors.muted),
+              style: const TextStyle(
+                fontSize: 9,
+                color: AppColors.muted,
+              ),
               overflow: TextOverflow.ellipsis,
             ),
           ],
@@ -764,7 +780,11 @@ class _TrackCard extends StatelessWidget {
                 color: bg,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: color, size: 18),
+              child: Icon(
+                icon,
+                color: color,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -782,7 +802,10 @@ class _TrackCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 9.5, color: AppColors.muted),
+                    style: const TextStyle(
+                      fontSize: 9.5,
+                      color: AppColors.muted,
+                    ),
                   ),
                 ],
               ),
@@ -794,6 +817,72 @@ class _TrackCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SessionTile extends StatelessWidget {
+  final dynamic session;
+
+  const _SessionTile({required this.session});
+
+  @override
+  Widget build(BuildContext context) {
+    final skill = session['skill']?.toString() ?? '';
+    final topic = session['topic']?.toString() ?? '';
+    final correct = session['quiz_correct'];
+    final total = session['quiz_total'];
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.lavender,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.check_circle_outline,
+              size: 16,
+              color: AppColors.purple,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$skill • $topic',
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (correct != null && total != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 3),
+                    child: Text(
+                      'Scored $correct/$total',
+                      style: const TextStyle(
+                        fontSize: 8.5,
+                        color: AppColors.muted,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

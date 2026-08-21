@@ -75,6 +75,7 @@ class _TerminalScreenState extends State<TerminalScreen> {
           const AppHeader(
             title: 'Terminal',
             subtitle: 'Run Python code directly in a sandboxed backend.',
+            showLogo: false,
           ),
           const SizedBox(height: 18),
           const Row(
@@ -159,10 +160,10 @@ class _TerminalScreenState extends State<TerminalScreen> {
               ),
               const SizedBox(width: 8),
               OutlinedButton.icon(
-                onPressed: isRunning ? null : runCode,
-                icon: const Icon(Icons.refresh_rounded, size: 16, color: AppColors.purple),
+                onPressed: isRunning ? null : clearOutput,
+                icon: const Icon(Icons.clear_rounded, size: 16, color: AppColors.purple),
                 label: const Text(
-                  'Retry',
+                  'Clear',
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
