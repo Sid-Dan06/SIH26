@@ -5,6 +5,7 @@ import '../widgets/pill.dart';
 import '../widgets/progress_bar.dart';
 import '../widgets/primary_button.dart';
 import '../widgets/section_title.dart';
+import '../widgets/home_widgets.dart';
 import '../services/api_service.dart';
 import 'syllabus_screen.dart';
 import 'terminal_screen.dart';
