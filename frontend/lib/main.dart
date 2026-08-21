@@ -33,7 +33,9 @@ class AdaptiveIntelligenceApp extends StatelessWidget {
       title: 'DevPulse AI',
       theme: AppTheme.lightTheme,
       scrollBehavior: const AppScrollBehavior(),
-      home: AuthService.isAuthenticated ? const AppShell() : const LoginScreen(),
+      // 🌟 Returning users go straight to AppShell (HomeScreen)! New signups get OnboardingScreen!
+      home:
+          AuthService.isAuthenticated ? const AppShell() : const LoginScreen(),
     );
   }
 }
