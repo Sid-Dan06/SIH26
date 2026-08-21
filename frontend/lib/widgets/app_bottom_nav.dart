@@ -27,9 +27,9 @@ class AppBottomNav extends StatelessWidget {
           label: 'Home',
         ),
         NavigationDestination(
-          icon: Icon(Icons.insights_outlined),
-          selectedIcon: Icon(Icons.insights_rounded, color: AppColors.purple),
-          label: 'Skills',
+          icon: Icon(Icons.terminal_outlined),
+          selectedIcon: Icon(Icons.terminal_rounded, color: AppColors.purple),
+          label: 'Terminal',
         ),
         NavigationDestination(
           icon: Icon(Icons.quiz_outlined),
@@ -37,15 +37,9 @@ class AppBottomNav extends StatelessWidget {
           label: 'Quiz',
         ),
         NavigationDestination(
-          icon: Icon(Icons.route_outlined),
-          selectedIcon: Icon(Icons.route_rounded, color: AppColors.purple),
-          label: 'My Path',
-        ),
-        NavigationDestination(
-          icon: Icon(Icons.dashboard_outlined),
-          selectedIcon:
-              Icon(Icons.dashboard_rounded, color: AppColors.purple),
-          label: 'Dashboard',
+          icon: Icon(Icons.person_outline_rounded),
+          selectedIcon: Icon(Icons.person_rounded, color: AppColors.purple),
+          label: 'Profile',
         ),
       ],
     );

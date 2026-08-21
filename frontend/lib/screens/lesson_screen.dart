@@ -5,16 +5,27 @@ import '../widgets/primary_button.dart';
 import '../services/api_service.dart';
 
 class LessonScreen extends StatefulWidget {
-  const LessonScreen({super.key});
+  final String? initialSkill;
+  final String? initialTopic;
+  final String? initialDifficulty;
+  final bool autoGenerate;
+
+  const LessonScreen({
+    super.key,
+    this.initialSkill,
+    this.initialTopic,
+    this.initialDifficulty,
+    this.autoGenerate = false,
+  });
 
   @override
   State<LessonScreen> createState() => _LessonScreenState();
 }
 
 class _LessonScreenState extends State<LessonScreen> {
-  String selectedSkill = 'Python';
+  late String selectedSkill;
   late String selectedTopic;
-  String selectedDifficulty = 'Beginner';
+  late String selectedDifficulty;
 
   bool isGenerating = false;
   String? lessonContent;
@@ -29,7 +40,24 @@ class _LessonScreenState extends State<LessonScreen> {
   @override
   void initState() {
     super.initState();
-    selectedTopic = SyllabusData.topicsBySkill[selectedSkill]!.first;
+    selectedSkill = widget.initialSkill != null &&
+            SyllabusData.topicsBySkill.containsKey(widget.initialSkill)
+        ? widget.initialSkill!
+        : 'Python';
+
+    final skillTopics = SyllabusData.topicsBySkill[selectedSkill]!;
+    selectedTopic = widget.initialTopic != null &&
+            skillTopics.contains(widget.initialTopic)
+        ? widget.initialTopic!
+        : skillTopics.first;
+
+    selectedDifficulty = widget.initialDifficulty ?? 'Beginner';
+
+    if (widget.autoGenerate) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        generateLesson();
+      });
+    }
   }
 
   Future<void> generateLesson() async {
@@ -46,9 +74,9 @@ class _LessonScreenState extends State<LessonScreen> {
         contentType: 'Explanation + Lesson + Examples',
         reason: 'Learner directly requested a lesson on this topic.',
       );
-      setState(() => lessonContent = content);
+      if (mounted) setState(() => lessonContent = content);
     } catch (e) {
-      setState(() => errorText = 'Could not generate a lesson right now. $e');
+      if (mounted) setState(() => errorText = 'Could not generate a lesson right now. $e');
     } finally {
       if (mounted) setState(() => isGenerating = false);
     }
@@ -63,24 +91,45 @@ class _LessonScreenState extends State<LessonScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const AppHeader(
-            title: 'Lesson Generator',
-            subtitle: 'AI-generated micro-lessons for any topic.',
+          Row(
+            children: [
+              if (Navigator.canPop(context))
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: IconButton(
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.text, size: 20),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ),
+              Expanded(
+                child: AppHeader(
+                  title: 'Lesson Studio',
+                  subtitle: 'AI-generated micro-lessons for $selectedTopic.',
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 18),
           Container(
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(17),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(color: AppColors.border),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x06000000),
+                  blurRadius: 10,
+                  offset: Offset(0, 3),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Skill',
+                const Text('Skill Track',
                     style: TextStyle(
-                        fontSize: 10, fontWeight: FontWeight.w800)),
+                        fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.text)),
                 const SizedBox(height: 6),
                 _Dropdown(
                   value: selectedSkill,
@@ -96,7 +145,7 @@ class _LessonScreenState extends State<LessonScreen> {
                 const SizedBox(height: 14),
                 const Text('Topic',
                     style: TextStyle(
-                        fontSize: 10, fontWeight: FontWeight.w800)),
+                        fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.text)),
                 const SizedBox(height: 6),
                 _Dropdown(
                   value: selectedTopic,
@@ -104,9 +153,9 @@ class _LessonScreenState extends State<LessonScreen> {
                   onChanged: (v) => setState(() => selectedTopic = v!),
                 ),
                 const SizedBox(height: 14),
-                const Text('Difficulty',
+                const Text('Difficulty Level',
                     style: TextStyle(
-                        fontSize: 10, fontWeight: FontWeight.w800)),
+                        fontSize: 10.5, fontWeight: FontWeight.w800, color: AppColors.text)),
                 const SizedBox(height: 6),
                 _Dropdown(
                   value: selectedDifficulty,
@@ -117,7 +166,7 @@ class _LessonScreenState extends State<LessonScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: PrimaryButton(
-                    text: isGenerating ? 'Generating...' : 'Generate Lesson',
+                    text: isGenerating ? 'Generating Lesson...' : 'Generate AI Lesson',
                     icon: Icons.auto_awesome,
                     onPressed: isGenerating ? null : generateLesson,
                   ),
@@ -127,55 +176,102 @@ class _LessonScreenState extends State<LessonScreen> {
           ),
           const SizedBox(height: 18),
           if (isGenerating)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 30),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 36),
               child: Center(
-                child: CircularProgressIndicator(color: AppColors.purple),
+                child: Column(
+                  children: [
+                    const CircularProgressIndicator(color: AppColors.purple),
+                    const SizedBox(height: 14),
+                    Text(
+                      'AI is crafting your lesson for $selectedTopic...',
+                      style: const TextStyle(fontSize: 11, color: AppColors.muted, fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
               ),
             ),
           if (errorText != null)
             Container(
-              padding: const EdgeInsets.all(13),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: const Color(0xFFFFE6E9),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Text(
                 errorText!,
-                style: const TextStyle(fontSize: 10.5, color: AppColors.red),
+                style: const TextStyle(fontSize: 11, color: AppColors.red),
               ),
             ),
           if (lessonContent != null) ...[
-            Row(
-              children: [
-                const Icon(Icons.auto_awesome,
-                    color: AppColors.purple, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  '$selectedTopic ($selectedDifficulty)',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.text,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(15),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.lavender,
-                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.border),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x06000000),
+                    blurRadius: 10,
+                    offset: Offset(0, 3),
+                  ),
+                ],
               ),
-              child: SelectableText(
-                lessonContent!,
-                style: const TextStyle(
-                  fontSize: 11.5,
-                  color: AppColors.text,
-                  height: 1.6,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.lavender,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.auto_awesome, color: AppColors.purple, size: 18),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              selectedTopic,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.text,
+                              ),
+                            ),
+                            Text(
+                              '$selectedSkill • $selectedDifficulty Level',
+                              style: const TextStyle(fontSize: 10, color: AppColors.muted),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.page,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: SelectableText(
+                      lessonContent!,
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.text,
+                        height: 1.6,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],

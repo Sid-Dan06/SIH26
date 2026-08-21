@@ -77,8 +77,8 @@ class _TerminalScreenState extends State<TerminalScreen> {
             subtitle: 'Run Python code directly in a sandboxed backend.',
           ),
           const SizedBox(height: 18),
-          Row(
-            children: const [
+          const Row(
+            children: [
               Pill(
                 text: 'PYTHON 3',
                 background: AppColors.lavender,
@@ -158,17 +158,24 @@ class _TerminalScreenState extends State<TerminalScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              OutlinedButton(
-                onPressed: hasRun ? clearOutput : null,
+              OutlinedButton.icon(
+                onPressed: isRunning ? null : runCode,
+                icon: const Icon(Icons.refresh_rounded, size: 16, color: AppColors.purple),
+                label: const Text(
+                  'Retry',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.purple,
+                  ),
+                ),
                 style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: AppColors.border),
+                  side: const BorderSide(color: AppColors.purple, width: 1.2),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 ),
-                child: const Icon(Icons.clear_rounded,
-                    size: 17, color: AppColors.muted),
               ),
             ],
           ),

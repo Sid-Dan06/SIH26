@@ -56,18 +56,6 @@ class AppHeader extends StatelessWidget {
             ],
           ),
         ),
-        Container(
-          padding: const EdgeInsets.all(9),
-          decoration: BoxDecoration(
-            color: AppColors.lavender,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(
-            Icons.notifications_none_rounded,
-            color: AppColors.purple,
-            size: 19,
-          ),
-        ),
       ],
     );
   }

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "796391861849",
+    "project_id": "sih26-ca0a1",
+    "storage_bucket": "sih26-ca0a1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:796391861849:android:8693a76e2575d0e8c40b48",
+        "android_client_info": {
+          "package_name": "com.example.adaptive_intelligence"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQ8K4pa8o86JDXBTwNFRwcXrT5Knc4LAA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
