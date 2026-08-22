@@ -116,14 +116,13 @@ def quiz_history(user=Depends(current_user)):
 
 
 @app.get("/assessment/start")
-def start_assessment():
+def start_assessment(skill: Optional[str] = None):
     """
-    Return the full pre-assessment question set.
-
-    NOTE: we strip out `correct_answer` before sending to the frontend —
-    no reason to hand the answer key to whatever is displaying the quiz.
+    Return the pre-assessment question set, optionally filtered by skill (Python, SQL, Git, Linux).
     """
     questions = get_pre_assessment_questions()
+    if skill:
+        questions = [q for q in questions if q.skill.value.lower() == skill.lower()]
     return [
         {
             "question_id": q.question_id,
@@ -138,51 +137,28 @@ def start_assessment():
 
 
 def generate_fallback_content(recommendation: dict) -> str:
+    """Fallback generator if Gemini API key is missing or rate limited."""
     skill = recommendation.get("skill", "Python")
-    topic = recommendation.get("topic", "Programming")
+    topic = recommendation.get("topic", "Fundamentals")
     difficulty = recommendation.get("difficulty", "Beginner")
-    
-    return f"""📚 Personalized Study Material (Local Sandbox Mode)
+    return f"""# {skill}: {topic} ({difficulty} Level)
 
-[Topic]: {skill} - {topic}
-[Difficulty]: {difficulty}
-[Reasoning]: API rate-limit/quota exceeded; loading offline study course template.
+## Overview
+Welcome to **{topic}** in **{skill}**. Understanding this core concept is essential for building scalable applications and passing technical assessments.
 
----
+## Key Concepts
+1. **Definition**: {topic} allows you to structure data efficiently and follow industry best practices.
+2. **Usage**: Always follow standard syntax guidelines when declaring variables and structuring code blocks.
+3. **Best Practices**: Keep code clean, readable, and modular.
 
-### Introduction to {topic}
-{topic} is an essential concept in {skill}. Mastering this topic allows you to build cleaner, more efficient, and scalable projects.
-
-### Core Concepts of {topic}
-1. **Definition**: Understanding the fundamentals and baseline syntax.
-2. **Best Practices**: Keeping code clean, readable, and well-structured.
-3. **Application**: Using these mechanisms in real-world scenarios.
-
----
-
-### Code Sandbox Exercises
-You can practice testing the concepts of {topic} inside the interactive Python Terminal!
-
+## Code Example
 ```python
-# Try running this inside your terminal:
-print("--- Learning {topic} ---")
-# Add your practice code here
+# {skill} {topic} Example
+def demonstrate_{topic.lower().replace(' ', '_')}():
+    print("Mastering {topic} in {skill}!")
+
+demonstrate_{topic.lower().replace(' ', '_')}()
 ```
-
----
-
-### Knowledge Check Quiz
-1. What is a key benefit of using {topic}?
-   * [x] Increased readability and structured execution
-   * [ ] Bypassing language compilation steps
-   * [ ] Eliminating the need for variables
-   * [ ] Lowering RAM usage to zero
-
-2. In {skill}, how is {topic} typically declared?
-   * [x] Using standard syntax conventions
-   * [ ] Bypassing class initializations
-   * [ ] Only inside external libraries
-   * [ ] Using low-level memory headers
 """
 
 
@@ -218,9 +194,6 @@ def submit_assessment(submission: AssessmentSubmission, user=Depends(current_use
 
 
 class GenerateContentRequest(BaseModel):
-    """What the frontend sends to request AI-generated lesson content.
-    Matches the exact shape recommend_next_step() already returns, so the
-    frontend can pass the recommendation straight through unchanged."""
     skill: str
     topic: str
     mastery: float
@@ -231,25 +204,16 @@ class GenerateContentRequest(BaseModel):
 
 @app.post("/generate-content")
 def generate_content(recommendation: GenerateContentRequest):
-    """
-    Ask Gemini to generate lesson content for a given recommendation.
-    """
+    """Ask Gemini to generate lesson content for a given recommendation."""
     try:
         lesson = generate_learning_content(recommendation.model_dump())
         return {"content": lesson}
-    except Exception as e:
-        # Fallback to high-quality template lesson if rate-limited
+    except Exception:
         fallback = generate_fallback_content(recommendation.model_dump())
         return {"content": fallback}
 
 
 class LearningCompleteRequest(BaseModel):
-    """
-    Submitted when a user finishes a lesson (quiz + optional exercise).
-
-    The profile is loaded from SQLite for authenticated users. The optional
-    profile field remains as a compatibility fallback for older clients.
-    """
     user_id: str
     skill: str
     topic: str
@@ -262,14 +226,6 @@ class LearningCompleteRequest(BaseModel):
 
 @app.post("/learning/complete")
 def complete_learning_session(payload: LearningCompleteRequest, user=Depends(current_user)):
-    """
-    Close the adaptive feedback loop (spec section 15):
-        1. Recalculate mastery for the topic just studied
-        2. Update that topic in the skill profile
-        3. Re-run the adaptive engine to get the NEXT recommendation
-
-    This proves the loop: mastery goes up -> next recommendation changes.
-    """
     stored_profile = get_profile(user["id"])
     skill_profile = stored_profile or payload.skill_profile
     if not skill_profile:
@@ -281,7 +237,6 @@ def complete_learning_session(payload: LearningCompleteRequest, user=Depends(cur
         raise HTTPException(status_code=400, detail=f"Unknown topic: {payload.topic}")
 
     old_topic_data = skill_profile[payload.skill][payload.topic]
-
     mastery_result = calculate_new_mastery(
         old_mastery=old_topic_data["mastery"],
         quiz_correct=payload.quiz_correct,
@@ -289,41 +244,26 @@ def complete_learning_session(payload: LearningCompleteRequest, user=Depends(cur
         exercise_score=payload.exercise_score,
     )
 
-    # Update just this topic's mastery in the profile; keep its other
-    # stored fields (accuracy, difficulty_performance, etc.) as-is since
-    # they describe the ORIGINAL assessment, not this new session.
-    updated_profile = skill_profile.copy()
-    updated_profile[payload.skill] = updated_profile[payload.skill].copy()
-    updated_profile[payload.skill][payload.topic] = {
-        **old_topic_data,
-        "mastery": mastery_result["new_mastery"],
-    }
-
+    skill_profile[payload.skill][payload.topic]["mastery"] = mastery_result["new_mastery"]
     save_learning_session(
-        user["id"], payload.skill, payload.topic, payload.quiz_correct,
-        payload.quiz_total, payload.exercise_score, payload.time_taken_seconds,
-        updated_profile,
+        user_id=user["id"],
+        skill=payload.skill,
+        topic=payload.topic,
+        quiz_correct=payload.quiz_correct,
+        quiz_total=payload.quiz_total,
+        exercise_score=payload.exercise_score,
+        time_taken_seconds=payload.time_taken_seconds,
     )
 
-    new_recommendation = recommend_next_step(updated_profile)
-
+    new_recommendation = recommend_next_step(skill_profile)
     return {
-        "user_id": user["id"],
         "mastery_update": mastery_result,
-        "updated_skill_profile": updated_profile,
+        "updated_skill_profile": skill_profile,
         "new_recommendation": new_recommendation,
     }
 
 
 @app.post("/execute")
 def execute_code(payload: CodeExecutionRequest):
-    """Execute Python code submitted from the frontend terminal."""
-    if payload.language.lower() == "python":
-        return run_python_code(payload.code)
-    else:
-        raise HTTPException(status_code=400, detail="Only Python execution is supported.")
-
-
-@app.get("/")
-def root():
-    return {"status": "Adaptive IT Training backend is running."}
+    result = run_python_code(payload.code)
+    return result

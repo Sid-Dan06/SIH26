@@ -13,10 +13,10 @@ class SkillsScreen extends StatefulWidget {
 }
 
 class _SkillsScreenState extends State<SkillsScreen> {
-  double pythonScore = 0.86;
-  double sqlScore = 0.61;
-  double gitScore = 0.74;
-  double linuxScore = 0.45;
+  double pythonScore = 0.0;
+  double sqlScore = 0.0;
+  double gitScore = 0.0;
+  double linuxScore = 0.0;
 
   @override
   void initState() {
@@ -28,32 +28,39 @@ class _SkillsScreenState extends State<SkillsScreen> {
     try {
       final data = await ApiService.fetchProgress();
       if (data.containsKey('skill_profile')) {
-        final profile = data['skill_profile'];
+        final profile = data['skill_profile'] as Map<String, dynamic>;
         setState(() {
-          if (profile.containsKey('Python')) {
-            pythonScore = _avgSkill(profile['Python']) / 100;
-          }
-          if (profile.containsKey('SQL')) {
-            sqlScore = _avgSkill(profile['SQL']) / 100;
-          }
-          if (profile.containsKey('Git')) {
-            gitScore = _avgSkill(profile['Git']) / 100;
-          }
-          if (profile.containsKey('Linux')) {
-            linuxScore = _avgSkill(profile['Linux']) / 100;
-          }
+          pythonScore = profile.containsKey('Python')
+              ? _avgSkill(profile['Python']) / 100
+              : 0.0;
+
+          sqlScore = profile.containsKey('SQL')
+              ? _avgSkill(profile['SQL']) / 100
+              : 0.0;
+
+          gitScore = profile.containsKey('Git')
+              ? _avgSkill(profile['Git']) / 100
+              : 0.0;
+
+          linuxScore = profile.containsKey('Linux')
+              ? _avgSkill(profile['Linux']) / 100
+              : 0.0;
         });
       }
     } catch (_) {}
   }
 
   double _avgSkill(Map<String, dynamic> topics) {
-    if (topics.isEmpty) return 50.0;
+    if (topics.isEmpty) return 0.0;
     double sum = 0;
-    topics.forEach((key, value) {
-      sum += (value['mastery'] ?? 50.0);
+    int count = 0;
+    topics.forEach((_, value) {
+      if (value is Map && value.containsKey('mastery')) {
+        sum += (value['mastery'] as num).toDouble();
+        count++;
+      }
     });
-    return sum / topics.length;
+    return count > 0 ? (sum / count) : 0.0;
   }
 
   @override
@@ -64,96 +71,43 @@ class _SkillsScreenState extends State<SkillsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const AppHeader(
-            title: 'Skills Profile',
-            subtitle: 'Real-time analysis of your technical proficiency.',
+            title: 'Skills Matrix',
+            subtitle: 'Real-time breakdown of proficiency across skills.',
           ),
           const SizedBox(height: 18),
+          const SectionTitle(title: 'Proficiency by Language & Tool'),
+          const SizedBox(height: 10),
           Container(
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(17),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(color: AppColors.border),
             ),
             child: Column(
               children: [
-                const Row(
-                  children: [
-                    Text(
-                      'Proficiency Matrix',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.text,
-                        fontSize: 13,
-                      ),
-                    ),
-                    Spacer(),
-                    Text(
-                      'Live Analysis',
-                      style: TextStyle(
-                        color: AppColors.green,
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ],
+                SkillRow(
+                  name: 'Python',
+                  value: pythonScore,
+                  score: '${(pythonScore * 100).round()}%',
                 ),
-                const SizedBox(height: 16),
                 SkillRow(
-                    name: 'Python',
-                    value: pythonScore,
-                    score: '${(pythonScore * 100).toInt()}%'),
+                  name: 'SQL',
+                  value: sqlScore,
+                  score: '${(sqlScore * 100).round()}%',
+                ),
                 SkillRow(
-                    name: 'SQL',
-                    value: sqlScore,
-                    score: '${(sqlScore * 100).toInt()}%'),
+                  name: 'Git',
+                  value: gitScore,
+                  score: '${(gitScore * 100).round()}%',
+                ),
                 SkillRow(
-                    name: 'Git',
-                    value: gitScore,
-                    score: '${(gitScore * 100).toInt()}%'),
-                SkillRow(
-                    name: 'Linux',
-                    value: linuxScore,
-                    score: '${(linuxScore * 100).toInt()}%'),
+                  name: 'Linux',
+                  value: linuxScore,
+                  score: '${(linuxScore * 100).round()}%',
+                ),
               ],
             ),
-          ),
-          const SizedBox(height: 16),
-          const SectionTitle(title: 'AI Assessment'),
-          const SizedBox(height: 9),
-          const InsightCard(
-            color: AppColors.greenBg,
-            icon: Icons.check_circle_outline,
-            title: 'Strong Areas',
-            text:
-                'SQL optimization and Python fundamentals are currently performing well.',
-          ),
-          const InsightCard(
-            color: AppColors.yellowBg,
-            icon: Icons.warning_amber_rounded,
-            title: 'Skill Gaps',
-            text:
-                'Linux permissions and advanced Git workflows need reinforcement.',
-          ),
-          const InsightCard(
-            color: Color(0xFFFFE7D8),
-            icon: Icons.auto_awesome,
-            title: 'Advanced AI Merge',
-            text:
-                'Suggested next topics combine Git and Linux to improve practical workflow skills.',
-          ),
-          const SizedBox(height: 16),
-          const SectionTitle(title: 'Recommended Next Steps'),
-          const SizedBox(height: 9),
-          const RecommendationTile(
-            number: '01',
-            title: 'Bash Mastery Path',
-            subtitle: 'Targeted module to improve Linux automation skills.',
-          ),
-          const RecommendationTile(
-            number: '02',
-            title: 'Git Conflict Simulator',
-            subtitle: 'Interactive practice for advanced merge scenarios.',
           ),
         ],
       ),

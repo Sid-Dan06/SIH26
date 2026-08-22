@@ -74,9 +74,12 @@ class ApiService {
   // 🌐 CORE APP FEATURES (Quiz, Progress, Terminal, AI)
   // -------------------------------------------------------------
 
-  // 3. Fetch Questions for Quiz Screen
-  static Future<List<dynamic>> fetchQuestions() async {
-    final res = await http.get(Uri.parse('$baseUrl/assessment/start'));
+  // 3. Fetch Questions for Quiz Screen (Supports filtering by skill!)
+  static Future<List<dynamic>> fetchQuestions({String? skill}) async {
+    final url = (skill != null && skill.isNotEmpty)
+        ? '$baseUrl/assessment/start?skill=$skill'
+        : '$baseUrl/assessment/start';
+    final res = await http.get(Uri.parse(url));
     if (res.statusCode == 200) {
       return jsonDecode(res.body);
     }
@@ -134,8 +137,7 @@ class ApiService {
     throw Exception("Failed to execute code in backend sandbox");
   }
 
-  // 7. AI Content Generation (used by both the Lesson screen & Quiz
-  // Generator screen — same backend endpoint, different content_type).
+  // 7. AI Content Generation
   static Future<String> generateContent({
     required String skill,
     required String topic,
@@ -163,7 +165,7 @@ class ApiService {
     throw Exception("Failed to generate AI content");
   }
 
-  // 8. Session History (for the Dashboard screen)
+  // 8. Session History
   static Future<List<dynamic>> fetchHistory() async {
     try {
       final res = await http.get(
@@ -178,7 +180,7 @@ class ApiService {
     return [];
   }
 
-  // 9. Quiz Attempt History (for the Dashboard screen)
+  // 9. Quiz Attempt History
   static Future<List<dynamic>> fetchQuizHistory() async {
     try {
       final res = await http.get(
@@ -193,7 +195,7 @@ class ApiService {
     return [];
   }
 
-  // 10. Complete Learning Session & update mastery
+  // 10. Complete Learning Session
   static Future<Map<String, dynamic>> completeLearningSession({
     required String skill,
     required String topic,
@@ -230,10 +232,6 @@ class ApiService {
   }
 }
 
-/// Static syllabus reference data, mirrored from backend/data/questions.json
-/// topic groupings. The backend has no dedicated /syllabus endpoint, so the
-/// curriculum structure lives here and is combined with live mastery scores
-/// pulled from /progress.
 class SyllabusData {
   static const Map<String, List<String>> topicsBySkill = {
     'Python': [
